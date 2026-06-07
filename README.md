@@ -11,7 +11,7 @@
 # QQPilotLinux - 基于窗口自动化的 QQ 自动回复机器人
 
 [Windows版本](https://github.com/QQPilotOrganization/QQPilot)
-
+[Android](https://github.com/QQPilotOrganization/QQPilotPocketEdition)
 
 <!-- [![示例截图](./QQPilot.jpeg)](./QQPilot.jpeg) -->
 <div align="center">
