@@ -178,6 +178,14 @@ if __name__ == '__main__':
                 else:
                     contain=image.containsRedDot(image.rect(*chatListActualSize))   
                 if contain!=[0,0]:
+                    time.sleep(1)
+                    if ATDetect:
+                        contain=image.containsRedDot(image.rect(*atPlaceActualSize))
+                    else:
+                        contain=image.containsRedDot(image.rect(*chatListActualSize))  
+                    if contain==[0,0]:
+                        continue 
+                    
                     dockLog.setText("🚫🖱️发现新信息  ")
                     logger.info(f"发现红点: {contain}")
 
