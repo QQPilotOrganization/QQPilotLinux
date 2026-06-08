@@ -5,10 +5,7 @@ import os
 
 def run_script(script_name):
     """运行指定的 shell 脚本"""
-    if os.name == 'nt':  # Windows
-        subprocess.Popen(['bash', script_name])
-    else:  # Unix-like (Linux/macOS)
-        subprocess.Popen(['./' + script_name])
+    subprocess.Popen(['bash', './' + script_name])
 
 def on_launch():
     run_script('run.sh')

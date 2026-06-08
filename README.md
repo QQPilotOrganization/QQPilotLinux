@@ -59,15 +59,11 @@ QQPilot 是一个全自动的 QQ 聊天机器人，通过以下流程实现智�
 ### 2. 安装 `uv`（Python 包 & 版本管理工具）
 
 `uv` 是由 Astral 开发的超快 Python 工具链，用于替代 `pip` + `pyenv`。
-[国内加速脚本]在release下的zip文件夹的uv-installer2.sh
 
 ```bash
 # 官方安装（可能较慢）
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 或使用国内加速脚本（推荐）
-chmod +x uv-installer2.sh
-./uv-installer2.sh
 ```
 
 > 安装后请重启终端。

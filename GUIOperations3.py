@@ -31,8 +31,8 @@ except:
 def focus():
     global wmctrlsh
     if autoFocusing:
-        subprocess.run(['sh','focus.sh'])
-    subprocess.run(['sh','left.sh'])
+        subprocess.run(['bash','./focus.sh'])
+    subprocess.run(['bash','./left.sh'])
 
 def mouse_move(x: int, y: int) -> bool:
     pyautogui.moveTo(x, y)
