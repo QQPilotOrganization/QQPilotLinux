@@ -1,8 +1,7 @@
-ollama
+requests
 colorama
 pyperclip
 flask
-openai
 pillow
 pyautogui
 pytweening

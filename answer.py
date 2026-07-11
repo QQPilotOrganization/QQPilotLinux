@@ -4,307 +4,337 @@ import load
 from colorama import Fore
 import base64
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import time
-from openai import OpenAI
 import httpx
+import requests
+import json
+import re
 from chatContent import ChatContent
+
+# ================= 配置加载 =================
 config = configparser.ConfigParser()
 config.read('config.ini', encoding='utf-8')
+
 modelName: str = config['general']['modelName']
-server_url: str=config['general']['server_url']
-isVisionModel: bool=config.getboolean('general', 'isVisionModel')
-maxImageCount=config.getint('general', 'maxImageCount')
-remoteServerTimeout=config.getint('general', 'remote_server_timeout')
+server_url: str = config['general']['server_url']
+isVisionModel: bool = config.getboolean('general', 'isVisionModel')
+maxImageCount = config.getint('general', 'maxImageCount')
+remoteServerTimeout = config.getint('general', 'remote_server_timeout')
+API_KEY = config['general']['API_KEY']
 
-API_KEY=config['general']['API_KEY']
+if API_KEY == 'None':
+    API_KEY = None
+
+useOllama = False
+builtInLanguageModel = False
+ollama_module = None
+tinylm = None
+
+MAX_LENGTH = 5000
 
 
-if API_KEY=='None':
-    API_KEY=None
-useOllama=False
-builtInLanguageModel=False
-ollama=None
+if server_url == 'builtin':
+    builtInLanguageModel = True
+    tinylm = importlib.import_module('TinyLangJaccard')
 
-MAX_LENGTH=5000
 
-if server_url.lower()=='ollama':
-    ollama=importlib.import_module('ollama')
-    useOllama=True
-if server_url=='builtin':
-    builtInLanguageModel=True
-    tinylm=importlib.import_module('TinyLangJaccard')
-
-# check the model is exist or not
-print('Model:',modelName)
-if useOllama:
-    try:
-        ollama.chat(modelName) # type: ignore
-    except ollama.ResponseError as e:  # type: ignore
-        print('错误：', e.error)
-        if e.status_code == 404:
-            print('模型未找到，正在下载...')
-            load.startLoading(Fore.YELLOW,'正在下载模型...')
-            ollama.pull(modelName)  # type: ignore
-            load.stopLoading()
-
-import base64
-import os
-
+# ================= 工具函数 =================
 def _imageToBase64(path: str) -> str:
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
-import re
-from pathlib import Path
 
 def isTime(text):
-    # 正则表达式匹配 HH:MM 格式，括号可选
     pattern = r'\(?([0-2]?[0-9]):([0-5][0-9])\)?'
     pattern2 = r'\(?([0-2]?[0-9]).([0-5][0-9])\)?'
-    
     matches = re.findall(pattern, text)
     matches.extend(re.findall(pattern2, text))
     valid_times = []
     for hour_str, minute_str in matches:
-        # 补全为两位数并转换为整数
         hour = int(hour_str)
         minute = int(minute_str)
-        
-        # 验证时间有效性：小时 0-23，分钟 0-59（minute 已由正则保证）
         if 0 <= hour <= 23:
             valid_times.append(f"{hour:02d}:{minute:02d}")
-    
     return len(valid_times) > 0, valid_times
 
 
-def concatenateText(text:list[ChatContent],images):
-    message=[]
-    textList=text
+def concatenateText(text: list[ChatContent], images):
+    message = []
+    textList = text
     for t in textList[:-1]:
-        if str(t)=='':
+        if str(t) == '':
             continue
-        if not t.ownByMyself:
-            message.append({"role": "user", "content": str(t)})
-        else:
-            message.append({"role": "assistant", "content": str(t)})
-    if len(textList)<1:
-        textList=['']
+        role = "assistant" if t.ownByMyself else "user"
+        message.append({"role": role, "content": str(t)})
+
+    if len(textList) < 1:
+        textList = ['']
+
+    last_content = str(textList[-1])
     if isVisionModel and images:
-        message.append({"role": "user", "content":str(textList[-1]), "images": [p for p in images if os.path.exists(p)]})
+        valid_images = [p for p in images if os.path.exists(p)]
+        message.append({"role": "user", "content": last_content, "images": valid_images})
     else:
-        message.append({"role": "user", "content":str(textList[-1])})
-    if len(message)<1:
-        message.append({"role": "user", "content":"_"})
+        message.append({"role": "user", "content": last_content})
+
+    if len(message) < 1:
+        message.append({"role": "user", "content": "_"})
     return message
-def getAnswer(text:list[ChatContent],systemPrompt:str='auto') -> Optional[str]:
-    """
-    调用 AI 模型获取回答（支持纯文本或图文输入）。
+
+
+def _print_token_usage(usage: Dict[str, Any], backend: str = "API"):
+    """参照 C# 实现打印 Token 用量"""
+    if not usage:
+        return
     
-    Args:
-        text: 用户问题文本
-        imageList: 本地图像路径列表（仅 vision 模型有效）
+    prompt_tokens = usage.get('prompt_tokens', usage.get('input_tokens', 0))
+    completion_tokens = usage.get('completion_tokens', usage.get('output_tokens', 0))
+    total_tokens = usage.get('total_tokens', prompt_tokens + completion_tokens)
     
-    Returns:
-        模型返回的文本，或 None（出错时）
-    """
-    if len(text)==0:
+    print(f"\n[{backend}] Token 用量 | 输入: {prompt_tokens} | 输出: {completion_tokens} | 总计: {total_tokens}")
+
+
+# ================= 核心推理函数 =================
+def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> Optional[str]:
+    if len(text) == 0:
         return ""
-    
+
+    # 内置模型处理
     if builtInLanguageModel:
         for t in text[::-1]:
-            if t.text == '':
+            if t.text == '' or t.ownByMyself:
                 continue
-            if t.ownByMyself:
-                continue
-            return tinylm.answer(t.text)
+            return tinylm.answer(t.text) # type: ignore
         return ''
-    
-
 
     # 获取系统提示
     system_prompt = config.get('general', 'system')
-    if systemPrompt!='auto':
-        if system_prompt == 'None' or systemPrompt=='':
-            system_prompt = ''
-        else:
-            system_prompt = systemPrompt
+    if systemPrompt != 'auto':
+        system_prompt = systemPrompt if systemPrompt and system_prompt != 'None' else ''
 
-        
-    imageList=[]
-    imageCount=0
+    # 收集图片
+    imageList = []
+    imageCount = 0
     for t in text:
         if not t.ownByMyself:
             for i in t.imagePaths:
                 if os.path.exists(i):
-                   imageList.append(i)
-                   imageCount+=1
-                   if imageCount>=maxImageCount:
-                       break
+                    imageList.append(i)
+                    imageCount += 1
+                    if imageCount >= maxImageCount:
+                        break
                 else:
-                   print(f"× 没有找到图片 {i}")
-            if imageCount>=maxImageCount:
+                    print(f"× 没有找到图片 {i}")
+            if imageCount >= maxImageCount:
                 break
-        if imageCount>=maxImageCount:
-            break
-    # 构建消息
 
-    
+    startTime = time.time()
+
+    # ========== Ollama 后端 (使用 requests) ==========
     if useOllama:
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
-        messages+=concatenateText(text,imageList)
-        print(f"Ollama request: {messages}")
-        try:
-            response = ollama.chat( # type: ignore
-                    model=modelName,
-                    messages=messages,
-                    
-                    
-                    stream=True
-                )
+        messages += concatenateText(text, imageList)
 
+        ollama_url = "http://localhost:11434/api/chat"
+        payload = {
+            "model": modelName,
+            "messages": messages,
+            "stream": True
+        }
+        
+        print(f"Ollama request: {json.dumps(payload, ensure_ascii=False)[:200]}...")
+        
+        try:
             result = ''
             length = 0
-            for chunk in response:
-                token = chunk['message']['content']
-                result += token
-                length += len(token)
-                if length >= MAX_LENGTH:
-                    break
-                print(token, end='', flush=True)
+            # Ollama 流式响应中每个 chunk 可能包含 eval_count 等，但完整 usage 通常在最后一个 chunk
+            final_eval_info = {}
+            
+            with requests.post(ollama_url, json=payload, stream=True, timeout=remoteServerTimeout) as resp:
+                resp.raise_for_status()
+                for line in resp.iter_lines():
+                    if not line:
+                        continue
+                    chunk = json.loads(line.decode('utf-8'))
+                    token = chunk.get('message', {}).get('content', '')
+                    
+                    if token:
+                        result += token
+                        length += len(token)
+                        print(token, end='', flush=True)
+                        if length >= MAX_LENGTH:
+                            break
+                    
+                    # 捕获最后一个 chunk 中的统计信息
+                    if 'eval_count' in chunk:
+                        final_eval_info = chunk
+            
             print()  # 换行
+            
+            # Ollama 的 token 统计字段与 OpenAI 不同，做映射
+            if final_eval_info:
+                usage_map = {
+                    'prompt_tokens': final_eval_info.get('prompt_eval_count', 0),
+                    'completion_tokens': final_eval_info.get('eval_count', 0),
+                    'total_tokens': final_eval_info.get('prompt_eval_count', 0) + final_eval_info.get('eval_count', 0)
+                }
+                _print_token_usage(usage_map, backend="Ollama")
+                
+            print(f'用时{time.time()-startTime:.2f}s')
             return result
+            
         except Exception as e:
             print(f"Ollama request failed: {e}")
             return None
-            
+
+    # ========== OpenAI 兼容后端 (使用 requests) ==========
     else:
+        headers = {"Content-Type": "application/json"}
+        if API_KEY:
+            headers["Authorization"] = f"Bearer {API_KEY}"
+
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+
+        # 构建消息体
+        if not (isVisionModel and imageList):
+            for t in text:
+                role = "assistant" if t.ownByMyself else "user"
+                messages.append({"role": role, "content": str(t)})
+            if messages and messages[-1]["role"] == "assistant":
+                messages.append({"role": "user", "content": ""})
+        else:
+            for t in text[:-1]:
+                role = "assistant" if t.ownByMyself else "user"
+                messages.append({"role": role, "content": str(t)})
+
+            last_t = text[-1]
+            final_content: List[Dict] = [{"type": "text", "text": str(last_t)}]
+            for img_path in imageList:
+                if not os.path.isfile(img_path):
+                    print(f"[ERROR] Image file not found: {img_path}")
+                    continue
+                b64_image = _imageToBase64(img_path)
+                mime_type = "image/jpeg" if img_path.lower().endswith(('.jpg', '.jpeg')) else "image/png"
+                final_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{mime_type};base64,{b64_image}"}
+                })
+            messages.append({"role": "user", "content": final_content})
+
+        api_url = f"{server_url.rstrip('/')}/chat/completions"
+        payload = {
+            "model": modelName,
+            "messages": messages,
+            "max_tokens": MAX_LENGTH,
+            "temperature": 0.7,
+            "stream": True  # 使用流式以实时输出
+        }
+
+        print(f"OpenAI compatible request: {json.dumps(payload, ensure_ascii=False)[:200]}...")
+
         try:
-            client = OpenAI(
-                api_key=API_KEY,
-                base_url=server_url,
-                timeout=httpx.Timeout(remoteServerTimeout),
-                max_retries=2
-            )
-            if not (isVisionModel and imageList):
-                messages = []
-                if system_prompt:
-                    messages.append({"role": "system", "content": system_prompt})
-
-                for t in text:
-                    role = "assistant" if t.ownByMyself else "user"
-                    messages.append({"role": role, "content": str(t)})
-
-                # 确保最后一条是 user 消息
-                if messages and messages[-1]["role"] == "assistant":
-                    messages.append({"role": "user", "content": ""})  # 或者 raise ValueError("对话不能以助手消息结尾")
-                print(f"openAI request{messages}")
-                startTime=time.time()
- 
-                response = client.chat.completions.create(
-                    model=modelName,
-                    messages=messages,
-                    max_tokens=MAX_LENGTH,
-                    temperature=0.7,
-                )
-                print(f'用时{time.time()-startTime:.2f}s')
-                answer: str = response.choices[0].message.content.strip()
-                print(answer)
-                return answer
-            else:
-                messages = []
-                if system_prompt:
-                    messages.append({"role": "system", "content": system_prompt})
-
-                # 所有历史消息（包括倒数第二条及之前）
-                for t in text[:-1]:
-                    role = "assistant" if t.ownByMyself else "user"
-                    messages.append({"role": role, "content": str(t)})
-
-                last_t = text[-1]
-
-                # 最后一条必须是用户输入（如果不是，强行视为用户输入可能有风险）
-                # 你可以选择报错，或自动转换（这里按你的逻辑转换）
-                # 但不要重复添加！
-
-                # 构建多模态 content
-                final_content:List = [{"type": "text", "text": str(last_t)}]
-
-                for img_path in imageList:
-                    if not os.path.isfile(img_path):
-                        print(f"[ERROR] Image file not found: {img_path}")
+            result = ''
+            usage_data = None
+            
+            with requests.post(api_url, json=payload, headers=headers, stream=True, timeout=remoteServerTimeout) as resp:
+                resp.raise_for_status()
+                for line in resp.iter_lines():
+                    if not line:
                         continue
-                    b64_image = _imageToBase64(img_path)
-                    mime_type = "image/jpeg" if img_path.lower().endswith(('.jpg', '.jpeg')) else "image/png"
-                    final_content.append({
-                        "type": "image_url",
-                        "image_url": {"url": f"data:{mime_type};base64,{b64_image}"}
-                    })
+                    decoded = line.decode('utf-8')
+                    if not decoded.startswith('data:'):
+                        continue
+                    data_str = decoded[len('data:'):].strip()
+                    if data_str == '[DONE]':
+                        break
+                    
+                    try:
+                        chunk = json.loads(data_str)
+                    except json.JSONDecodeError:
+                        continue
+                    
+                    # 提取内容
+                    delta = chunk.get('choices', [{}])[0].get('delta', {})
+                    token = delta.get('content', '')
+                    if token:
+                        result += token
+                        print(token, end='', flush=True)
+                    
+                    # 部分 API 在最后一个 chunk 返回 usage
+                    if 'usage' in chunk and chunk['usage']:
+                        usage_data = chunk['usage']
 
-                messages.append({"role": "user", "content": final_content})
-                print(f"openAI request{messages}")
-                startTime=time.time()
-                response = client.chat.completions.create(
-                    model=modelName,
-                    messages=messages,
-                    max_tokens=MAX_LENGTH,
-                    temperature=0.7,
-                )
-                answer: str = response.choices[0].message.content.strip() #type: ignore
-                print(f'用时{time.time()-startTime:.2f}s')
-
-                print(answer)
-                return answer
+            print()
+            
+            # 如果流式没返回 usage，尝试从非流式获取（可选优化）
+            # 这里直接使用流式中获取到的，或者打印提示
+            if usage_data:
+                _print_token_usage(usage_data, backend="OpenAI-Compatible")
+            else:
+                print("[INFO] 当前 API 流式响应未返回 Token 用量信息")
+                
+            print(f'用时{time.time()-startTime:.2f}s')
+            return result.strip() if result else None
 
         except Exception as e:
             print(f"[ERROR] Failed to get answer: {e}")
-            # raise e
             return None
-                
-def get_answer_as_string(text:str,system_prompt):
-    return getAnswer([ChatContent(username='',imagePaths=[],text=text,time='',ownByMyself=False)],system_prompt)
+
+
+def get_answer_as_string(text: str, system_prompt):
+    return getAnswer([ChatContent(username='', imagePaths=[], text=text, time='', ownByMyself=False)], system_prompt)
+
+
+# ================= 测试入口 =================
 if __name__ == '__main__':
-    ollama=importlib.import_module('ollama')
-    tinylm=importlib.import_module('TinyLangJaccard')
-    c=ChatContent(
-        username='',
-        imagePaths=[],
+    c = ChatContent(
+        username='', imagePaths=[], 
         text='解释图片\n2\n3\n4\n5',
         time=f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}',
         ownByMyself=False
     )
-    c2=ChatContent(
-        username='',
-        imagePaths=[r"D:\Pictures\111.PNG"],
+    c2 = ChatContent(
+        username='', imagePaths=[r"D:\Pictures\111.PNG"],
         text='12345',
-       time=f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}',
+        time=f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}',
         ownByMyself=True
     )
-    c3=ChatContent(
-        username='',
-        imagePaths=[],
+    c3 = ChatContent(
+        username='', imagePaths=[],
         text='678910',
         time=f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}',
         ownByMyself=False
     )
 
+    # 测试 Ollama
+    useOllama = True
+    modelName = 'jingyaogong/minimind2:latest'
+    print("\n=== Testing Ollama ===")
+    answer = getAnswer([c, c2, c3])
+    print(f"Answer: {answer}")
 
-    useOllama=True
-    modelName='jingyaogong/minimind2:latest'
-    answer=getAnswer([c,c2,c3] )
-    print(answer)
-    isVisionModel=True
-    answer=getAnswer([c,c2,c3] )
-    print(answer)
-    useOllama=False
-    builtInLanguageModel=True
-    answer=getAnswer([c,c2,c3] )
-    print(answer)
-    builtInLanguageModel=False
+    # 测试 Vision
+    print("\n=== Testing Ollama Vision ===")
+    isVisionModel = True
+    answer = getAnswer([c, c2, c3])
+    print(f"Answer: {answer}")
+
+    # 测试 Built-in
+    print("\n=== Testing Built-in Model ===")
+    useOllama = False
+    builtInLanguageModel = True
+    answer = getAnswer([c, c2, c3])
+    print(f"Answer: {answer}")
+
+    # 测试 OpenAI Compatible
+    print("\n=== Testing OpenAI Compatible API ===")
+    builtInLanguageModel = False
     server_url = 'http://localhost:8000/v1'
-    API_KEY='21r234242'
-    answer=getAnswer([c,c2,c3] )
-    print(answer)
-
+    API_KEY = '21r234242'
+    answer = getAnswer([c, c2, c3])
+    print(f"Answer: {answer}")

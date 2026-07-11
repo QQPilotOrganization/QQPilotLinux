@@ -16,12 +16,13 @@ class ChatContent:
         self.text = text
         self.time = time
         self.ownByMyself = ownByMyself
+        self.empty=True if self.text else False
     def report(self) -> str:
         return f'{'[你]' if self.ownByMyself else ''}{self.username}: {self.text if self.text else "【空】"}\n{self.time}\n 图片：{[image for image in self.imagePaths if os.path.exists(image)] if [image for image in self.imagePaths if os.path.exists(image)] != [] else "无" }'
     # 
     def __str__(self) -> str:
+        
         if not self.ownByMyself:
-            return f'{self.username}:{self.text if self.text else "【空】"}'
-        #[{self.time}]
+            return f'【用户名】{self.username}\n【内容】{self.text if self.text else "【空】"}'
         else:
-            return f'{self.text if self.text else "【空】"}'
+            return f'【{self.text if self.text else "【空】"}'
