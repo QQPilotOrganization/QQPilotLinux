@@ -65,6 +65,8 @@ def concatenateText(text: list[ChatContent], images):
     for t in textList[:-1]:
         if str(t) == '':
             continue
+        if t.empty or t.text=="【空】":
+            continue
         role = "assistant" if t.ownByMyself else "user"
         message.append({"role": role, "content": str(t)})
 
