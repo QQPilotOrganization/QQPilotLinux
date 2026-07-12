@@ -5,6 +5,8 @@ import configparser
 import time
 import os
 import subprocess
+from colorama import Fore
+from conversationStyleExtract import indentificationString
 config = configparser.ConfigParser()
 config.read('config.ini',encoding='utf-8')
 scroll=config.getint('general','scroll')
@@ -115,22 +117,54 @@ def goto(x: int, y: int)-> bool:
     """
     mouse_move(x, y)
     return True
-
+def getCenter(area: tuple[int, int, int, int]) -> tuple[int, int]:
+    area2=list(area)
+    pos1=area2[0]+((area2[3]-area2[1]) // 2)
+    pos2=area2[1]+((area2[4]-area2[2]) // 2)
+    return pos1,pos2
+def clickCenter(area):
+    click(*getCenter(area))
+    
 press=press_key
-def sendTextWithoutClick(text:str):
+def PasteTextToSection(text:str,section: tuple[int, int, int, int]):
+    pyperclip.copy(text)
+    time.sleep(0.2)
+    clickCenter(section)
+    hotkey("ctrl","v")
+    time.sleep(0.8)
+    
+def SendTextAndInsertIdentificationString(text:str,section: tuple[int, int, int, int]):
     temp=''
-    for i in text:
-        if i=='\n':
-            pyperclip.copy(temp)
-            time.sleep(.2)
-            temp=''
-            hotkey('ctrl', 'v')
-            press('enter')
-            continue
-        temp+=i
-    pyperclip.copy(temp)
-    time.sleep(.2)
-    hotkey('ctrl', 'v')
+    print(Fore.GREEN,"发消息->" + text)
+
+    for message in text.split("[[NEXT]]"):
+        m=message.split("\n")
+        for sentence in m[:-1]:
+            PasteTextToSection(sentence,section)
+            # clickCenter(section)
+            press("enter")
+            time.sleep(0.2)
+            # pyperclip.copy(temp)
+            # time.sleep(.2)
+            # # click(commentSectionActualSize)
+            # hotkey('ctrl', 'v')
+        PasteTextToSection(m[-1],section)
+        clickCenter(section)
+        time.sleep(200)
+        hotkey('ctrl','enter')
+            
+    # for i in text:
+    #     if i=='\n':
+    #         pyperclip.copy(temp)
+    #         time.sleep(.2)
+    #         temp=''
+    #         hotkey('ctrl', 'v')
+    #         press('enter')
+    #         continue
+    #     temp+=i
+    # pyperclip.copy(temp)
+    # time.sleep(.2)
+    # hotkey('ctrl', 'v')
 
 def dragFromTo(x1: int, y1: int, x2: int, y2: int):
     mouse_move(x1, y1)

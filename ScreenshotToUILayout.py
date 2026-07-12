@@ -68,6 +68,8 @@ def autoFocus():
 
 t=None
 
+
+
 if __name__ == '__main__':
     try:
 
@@ -161,6 +163,14 @@ if __name__ == '__main__':
 
         uploadImagePossibleActualSize=positions.toActualSize(positions.UPLOAD_IMAGE_POSSIBLE_BBOX_RELATIVE_SIZE,size)
         logger.debug(f"上传图片可能位置: {uploadImagePossibleActualSize}")
+        def GoBack():
+            click(chatListActualSize[0]+int(100*scale),chatListActualSize[1]+int(20*scale))
+            time.sleep(0.1)
+
+            click(*contactButtonActualPosition)
+            time.sleep(0.1)
+            click(*chatButtonActualPosition)
+            time.sleep(1)
         while True:
             try:
                 # im=image.screenshot(*positionRect)
@@ -220,8 +230,16 @@ if __name__ == '__main__':
                         time.sleep(.2)
                     # click(cancelButtonActualPosition[0],cancelButtonActualPosition[1])
 
-
-                    ChatContents=extract(pyperclip.paste())
+                    chat=pyperclip.paste()
+                    if chat=="":
+                        dockLog.setText("没有提取到消息。")
+                        logger.error("没有提取到消息。")
+                        GoBack()
+                        continue
+                        
+                    ChatContents=extract(chat)
+                    
+                    
 
                     dockLog.setText("等待扩展完成操作")
                     extensionLoader.callEveryExtension("after_receiving_messages",ChatContents)
@@ -253,21 +271,18 @@ if __name__ == '__main__':
                             result=''.join(list(result2))
                     except:
                         result=""
-
+                    if result.strip()=="":
+                        logger.info("退出会话")
+                        GoBack()
+                        continue
                     click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
                     
                     time.sleep(.1)
                     
-                    # 清空消息框
-                    # hotkey('ctrl','a')
-                    # time.sleep(.1)
-                    # press('backspace')
-                    # time.sleep(.1)
 
                     if type(result)==str:
-                        result+=indentificationString
-                        # logger.info(f"{Fore.GREEN}回答: {result}{Fore.RESET}")
-                        sendTextWithoutClick(result)
+                        # result+=indentificationString
+                        SendTextAndInsertIdentificationString(result,commentSectionActualSize)
 
                     # click "send" button
                     time.sleep(2)
@@ -281,13 +296,7 @@ if __name__ == '__main__':
 
                     # exit conversation
                     logger.info("退出会话")
-                    click(chatListActualSize[0]+int(100*scale),chatListActualSize[1]+int(20*scale))
-                    time.sleep(0.1)
-
-                    click(*contactButtonActualPosition)
-                    time.sleep(0.1)
-                    click(*chatButtonActualPosition)
-                    time.sleep(1)
+                    GoBack()
                 # else:
                 #     if isVisionModel:
                 #         conversationImages.findImageBegin()
