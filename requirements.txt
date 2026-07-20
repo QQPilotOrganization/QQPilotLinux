@@ -5,3 +5,4 @@ flask
 pillow
 pyautogui
 pytweening
+opencv-python

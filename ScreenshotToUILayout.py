@@ -1,4 +1,5 @@
 from colorama import Fore
+import Vision
 import sysDetect
 if sysDetect.isLinux():
     import scaleToiniLinux
@@ -164,6 +165,9 @@ if __name__ == '__main__':
         uploadImagePossibleActualSize=positions.toActualSize(positions.UPLOAD_IMAGE_POSSIBLE_BBOX_RELATIVE_SIZE,size)
         logger.debug(f"上传图片可能位置: {uploadImagePossibleActualSize}")
         totalTokens=0
+        copyButtonPossibleAcutalSize=positions.toActualSize(positions.COPY_BUTTON_BBOX_RELATIVE_SIZE,size)
+        logger.debug(f"复制可能位置: {copyButtonPossibleAcutalSize}")
+        
         if os.path.exists(TOKENCOUNTFILE):
             with open(TOKENCOUNTFILE,'r',encoding='utf8') as f:
                 totalTokens=int(f.read())
@@ -171,13 +175,30 @@ if __name__ == '__main__':
             with open(TOKENCOUNTFILE,'w',encoding='utf8') as f:
                 f.write("0")
         def GoBack():
-            click(chatListActualSize[0]+int(100*scale),chatListActualSize[1]+int(20*scale))
-            time.sleep(0.1)
+            count=0
+            while 1:
+                click(chatListActualSize[0]+int(100*scale),chatListActualSize[1]+int(20*scale))
+                time.sleep(0.1)
 
-            click(*contactButtonActualPosition)
-            time.sleep(0.1)
-            click(*chatButtonActualPosition)
-            time.sleep(1)
+                click(*contactButtonActualPosition)
+                time.sleep(0.1)
+                click(*chatButtonActualPosition)
+                time.sleep(1)
+                image.screenshot(*copyButtonPossibleAcutalSize)
+                time.sleep(1500)
+                count+=1
+                if(count>2):
+                    break
+                pointsOfCopy=Vision.FindTemplates("screenshot.png",'copy.png',30,1)
+                if len(pointsOfCopy)>1:
+                    continue
+                image.screenshot(*uploadImagePossibleActualSize)
+                pointsOfUpload=Vision.FindTemplates("screenshot.png",'uploadImage.png',30,1)
+                if(len(pointsOfUpload)>1):
+                    continue
+                break
+                
+                
         while True:
             try:
                 # im=image.screenshot(*positionRect)
@@ -217,24 +238,35 @@ if __name__ == '__main__':
                     dockLog.setText("🚫🖱️ 请勿移动鼠标")
                     time.sleep(.1)
                     goto(conversationActualSize[0]+((conversationActualSize[2]-conversationActualSize[0])//2),conversationActualSize[1]+((conversationActualSize[3]-conversationActualSize[1])//2))
+                    image.screenshot(*copyButtonPossibleAcutalSize)
+
+                    t=Vision.FindTemplates('screenshot.png','copy.png',30,1)
+                    if len(t)>=1 and t[0]!=[0,0]:
+                        click(t[0][0],t[0][1])
+                    else:
+                        logger.error(f"{Fore.YELLOW}使用模板匹配查找复制按钮失败{Fore.RESET}")
+                        
+                        
                     
-                    for i in range(scrollTries):
-                        scrollDown()
-                    time.sleep(.4)
-                    
-                    click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
-                    for i in range(tab_times):
-                        tab()
+                        for i in range(scrollTries):
+                            scrollDown()
                         time.sleep(.4)
-                    press('enter')
+                        
+                        click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
+                        for i in range(tab_times):
+                            tab()
+                            time.sleep(.4)
+                        press('enter')
 
                     
 
+                        time.sleep(2)
+                        
+                        for _ in range(4):
+                            click(cancelButtonActualPosition[0],cancelButtonActualPosition[1])
+                            time.sleep(.2)
                     time.sleep(2)
-                    
-                    for _ in range(4):
-                        click(cancelButtonActualPosition[0],cancelButtonActualPosition[1])
-                        time.sleep(.2)
+
                     # click(cancelButtonActualPosition[0],cancelButtonActualPosition[1])
 
                     chat=pyperclip.paste()
