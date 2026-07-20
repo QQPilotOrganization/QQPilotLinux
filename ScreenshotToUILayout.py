@@ -12,7 +12,7 @@ from random import randint
 import subprocess
 import platform
 # import upload
-
+TOKENCOUNTFILE = 'tokencount.txt'
 
 
 
@@ -163,6 +163,13 @@ if __name__ == '__main__':
 
         uploadImagePossibleActualSize=positions.toActualSize(positions.UPLOAD_IMAGE_POSSIBLE_BBOX_RELATIVE_SIZE,size)
         logger.debug(f"上传图片可能位置: {uploadImagePossibleActualSize}")
+        totalTokens=0
+        if os.path.exists(TOKENCOUNTFILE):
+            with open(TOKENCOUNTFILE,'r',encoding='utf8') as f:
+                totalTokens=int(f.read())
+        else:
+            with open(TOKENCOUNTFILE,'w',encoding='utf8') as f:
+                f.write("0")
         def GoBack():
             click(chatListActualSize[0]+int(100*scale),chatListActualSize[1]+int(20*scale))
             time.sleep(0.1)
@@ -255,8 +262,12 @@ if __name__ == '__main__':
 
 
                     print(f"{Fore.CYAN}{'\n'.join(list(conversationText))}{Fore.RESET}")
+                    
                     try:
-                        result=answer.getAnswer(ChatContents)
+                        result,tokenUsage=answer.getAnswer(ChatContents)
+                        totalTokens+=tokenUsage
+                        with open(TOKENCOUNTFILE,'w',encoding='utf8') as f:
+                            f.write(str(totalTokens))
                     except Exception as e:
                         logger.error(f"语言模型生成答案失败\n{e}")
                         dockLog.setText("× 语言模型生成答案失败")

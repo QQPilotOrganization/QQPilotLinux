@@ -98,17 +98,18 @@ def _print_token_usage(usage: Dict[str, Any], backend: str = "API"):
 
 
 # ================= 核心推理函数 =================
-def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> Optional[str]:
+def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> tuple[Optional[str],int]:
+    totalTokens=0
     if len(text) == 0:
-        return ""
+        return "",0
 
     # 内置模型处理
     if builtInLanguageModel:
         for t in text[::-1]:
             if t.text == '' or t.ownByMyself:
                 continue
-            return tinylm.answer(t.text) # type: ignore
-        return ''
+            return tinylm.answer(t.text),0 # type: ignore
+        return '',0
 
     # 获取系统提示
     system_prompt = config.get('general', 'system')
@@ -181,16 +182,17 @@ def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> Optional[s
                 usage_map = {
                     'prompt_tokens': final_eval_info.get('prompt_eval_count', 0),
                     'completion_tokens': final_eval_info.get('eval_count', 0),
-                    'total_tokens': final_eval_info.get('prompt_eval_count', 0) + final_eval_info.get('eval_count', 0)
+                    'total_tokens': final_eval_info.get('prompt_eval_count', 0)+final_eval_info.get('eval_count', 0)
                 }
+                totalTokens=final_eval_info.get('prompt_eval_count', 0)+final_eval_info.get('eval_count', 0);
                 _print_token_usage(usage_map, backend="Ollama")
                 
             print(f'用时{time.time()-startTime:.2f}s')
-            return result
+            return result,totalTokens
             
         except Exception as e:
             print(f"Ollama request failed: {e}")
-            return None
+            return None,0
 
     # ========== OpenAI 兼容后端 (使用 requests) ==========
     else:
@@ -275,17 +277,19 @@ def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> Optional[s
             
             # 如果流式没返回 usage，尝试从非流式获取（可选优化）
             # 这里直接使用流式中获取到的，或者打印提示
+            
             if usage_data:
+                totalTokens=usage_data.get('total_tokens', 0)
                 _print_token_usage(usage_data, backend="OpenAI-Compatible")
             else:
                 print("[INFO] 当前 API 流式响应未返回 Token 用量信息")
                 
             print(f'用时{time.time()-startTime:.2f}s')
-            return result.strip() if result else None
+            return (result.strip() if result else None),totalTokens
 
         except Exception as e:
             print(f"[ERROR] Failed to get answer: {e}")
-            return None
+            return None,0
 
 
 def get_answer_as_string(text: str, system_prompt):

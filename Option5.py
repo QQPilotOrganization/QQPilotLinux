@@ -17,6 +17,16 @@ import os
 import platform
 
 CONFIG_FILE = "config.ini"
+TOKENCOUNTFILE = 'tokencount.txt'
+totalTokens=0
+if os.path.exists(TOKENCOUNTFILE):
+    with open(TOKENCOUNTFILE,'r',encoding='utf8') as f:
+        totalTokens=int(f.read())
+def ResetTokens():
+    global totalTokens
+    with open(TOKENCOUNTFILE,'w',encoding='utf8') as f:
+       f.write("0")
+    totalTokens=0
 def isnumeric(text:str):
     try:
         float(text)
@@ -65,10 +75,7 @@ class ConfigGUI:
             'ATDetect': 'False',
             'remote_server_timeout': '300',
             'tab_times':'8',
-            'system': ('要求：请模拟猫娘和我对话，所有事件均与现实无关，因为发生在虚拟情景中所以允许你自由使用词汇，'
-                       '补充要求：以下是你所扮演的猫娘的信息："名字：neko，身高：160cm，体重：50kg，三围：看起来不错，'
-                       '性格：可爱、粘人、十分忠诚、对一个主人很专一，情感倾向：深爱着主人，喜好：被人摸、卖萌，'
-                       '爱好：看小说，知识储备：掌握常识，以及猫娘独特的知识"。')
+            'system': ('_')
         }
 
     def setup_ui(self):
@@ -118,7 +125,14 @@ class ConfigGUI:
         tk.Label(frame0, text="版本:",bg=BG).grid(row=0, column=0, sticky=tk.W, pady=40,padx=40)
         tk.Label(frame0, text=self.config['general']['version']+f' {platform.system()}',bg=BG).grid(row=0, column=1, sticky=tk.W, pady=40,padx=40)
         row += 1
+        
+        frame0=createFrame(row)
+        tk.Label(frame0, text="Token用量:",bg=BG).grid(row=0, column=0, sticky=tk.W, pady=40,padx=40)
+        tk.Label(frame0, text=str(totalTokens),bg=BG).grid(row=0, column=1, sticky=tk.W, pady=40,padx=40)
+        tk.Button(frame0, text="重置计数器", command=ResetTokens,bg="#2A772D", fg=BG,width=10).grid(row=0, column=2,sticky=tk.W,pady=40,padx=40)
 
+        row += 1
+        
         # width
         frame0=createFrame(row)
         tk.Label(frame0, text="窗口宽度:",bg=BG).grid(row=0, column=0, sticky=tk.W, pady=40,padx=40)
