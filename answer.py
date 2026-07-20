@@ -37,7 +37,8 @@ MAX_LENGTH = 5000
 if server_url == 'builtin':
     builtInLanguageModel = True
     tinylm = importlib.import_module('TinyLangJaccard')
-
+if(server_url.lower()=='ollama'):
+    useOllama=True
 
 # ================= 工具函数 =================
 def _imageToBase64(path: str) -> str:

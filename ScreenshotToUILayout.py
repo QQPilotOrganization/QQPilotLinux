@@ -175,6 +175,8 @@ if __name__ == '__main__':
             with open(TOKENCOUNTFILE,'w',encoding='utf8') as f:
                 f.write("0")
         def GoBack():
+            logger.info("GoBack")
+            # dockLog.setText(1)
             count=0
             while 1:
                 click(chatListActualSize[0]+int(100*scale),chatListActualSize[1]+int(20*scale))
@@ -184,18 +186,31 @@ if __name__ == '__main__':
                 time.sleep(0.1)
                 click(*chatButtonActualPosition)
                 time.sleep(1)
-                image.screenshot(*copyButtonPossibleAcutalSize)
-                time.sleep(1500)
+                image.fullScreenShot()
+                time.sleep(1.5)
                 count+=1
                 if(count>2):
                     break
-                pointsOfCopy=Vision.FindTemplates("screenshot.png",'copy.png',30,1)
-                if len(pointsOfCopy)>1:
-                    continue
-                image.screenshot(*uploadImagePossibleActualSize)
+                dockLog.setText(count)
+                
+                
                 pointsOfUpload=Vision.FindTemplates("screenshot.png",'uploadImage.png',30,1)
+                logger.info(pointsOfUpload)
+                
                 if(len(pointsOfUpload)>1):
+                    time.sleep(1.5)
                     continue
+                
+                
+                pointsOfCopy=Vision.FindTemplates("screenshot.png",'copy.png',30,1)
+                logger.info(pointsOfCopy)
+                
+                if len(pointsOfCopy)>1:
+                    time.sleep(1.5)
+                    
+                    continue
+                # image.screenshot(*uploadImagePossibleActualSize)
+
                 break
                 
                 
@@ -238,7 +253,7 @@ if __name__ == '__main__':
                     dockLog.setText("🚫🖱️ 请勿移动鼠标")
                     time.sleep(.1)
                     goto(conversationActualSize[0]+((conversationActualSize[2]-conversationActualSize[0])//2),conversationActualSize[1]+((conversationActualSize[3]-conversationActualSize[1])//2))
-                    image.screenshot(*copyButtonPossibleAcutalSize)
+                    image.fullScreenShot()
 
                     t=Vision.FindTemplates('screenshot.png','copy.png',30,1)
                     if len(t)>=1 and t[0]!=[0,0]:
