@@ -89,12 +89,13 @@ if __name__ == '__main__':
         isVisionModel=config.getboolean('general','isVisionModel')
         ATDetect=config.getboolean('general','ATDetect')
         tab_times=config.getint('general','tab_times')
+        userName=config.get('general','name')
 
-        print(f"{Fore.YELLOW}{config.get('general','version')}{Fore.RESET}",end='\t')
+        print(f"{Fore.YELLOW}QQPilot {config.get('general','version')}{Fore.RESET}",end='\t')
         print(f"{Fore.CYAN}{platform.platform()}{Fore.RESET}")
         sendImagePossibility=int(sendImagePossibility)
 
-
+        logger.info(f"欢迎您,{userName}。")
         logger.info("自动聚焦功能已开启")
         t=threading.Thread(target=autoFocus)
         t.start()
@@ -291,7 +292,7 @@ if __name__ == '__main__':
                         GoBack()
                         continue
                         
-                    ChatContents=extract(chat)
+                    ChatContents=ParseChatLog(chat,userName)
                     
                     
 
@@ -340,7 +341,7 @@ if __name__ == '__main__':
 
                     if type(result)==str:
                         # result+=indentificationString
-                        SendTextAndInsertIdentificationString(result,commentSectionActualSize)
+                        SendText(result,commentSectionActualSize)
 
                     # click "send" button
                     time.sleep(2)

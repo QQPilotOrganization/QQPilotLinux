@@ -1,4 +1,4 @@
-indentificationString='⨋'
+indentificationString=''
 
 import re
 from dataclasses import dataclass
@@ -47,7 +47,7 @@ def extract_image_paths(text: str) -> tuple[List[str], str]:
     return img_paths, clean_text
 
 
-def parse_chat_log(chat_str: str) -> List[ChatContent]:
+def ParseChatLog(chat_str: str,name:str) -> List[ChatContent]:
     # 匹配消息头：任意非空字符直到 ": MM-dd HH:mm:ss"
     header_pattern = re.compile(r'^(.+?):\s+(\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})$')
     lines = chat_str.splitlines()
@@ -88,14 +88,14 @@ def parse_chat_log(chat_str: str) -> List[ChatContent]:
                 imagePaths=image_paths,
                 text=clean_text,
                 time=time_str,
-                ownByMyself=( indentificationString in raw_text)
+                ownByMyself=( username.strip()==name.strip())
             ))
         else:
             i += 1
 
     return messages
 
-extract=parse_chat_log
+extract=ParseChatLog
 
 # ===== 示例测试 =====
 if __name__ == "__main__":
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 <img src="file:///C:/Users/Admin/Pictures/test%20image.png" />
 还有这张图！'''
 
-    parsed = parse_chat_log(test_log)
+    parsed = ParseChatLog(test_log,"3454345")
     for msg in parsed:
         print("=== 消息 ===")
         print(str(msg))

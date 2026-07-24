@@ -6,7 +6,7 @@ import time
 import os
 import subprocess
 from colorama import Fore
-from conversationStyleExtract import indentificationString
+# from conversationStyleExtract import indentificationString
 config = configparser.ConfigParser()
 config.read('config.ini',encoding='utf-8')
 scroll=config.getint('general','scroll')
@@ -133,7 +133,7 @@ def PasteTextToSection(text:str,section: tuple[int, int, int, int]):
     hotkey("ctrl","v")
     time.sleep(0.8)
     
-def SendTextAndInsertIdentificationString(text:str,section: tuple[int, int, int, int]):
+def SendText(text:str,section: tuple[int, int, int, int]):
     temp=''
     print(Fore.GREEN,"发消息->" + text)
 

@@ -57,7 +57,8 @@ class ConfigGUI:
 
     def init_default_config(self):
         self.config['general'] = {
-            'version': 'QQPilot 1.5.8',
+            'version': 'w',
+            'name': 'neko',
             'width': '1285',
             'height': '720',
             'scale': '1.75',
@@ -126,6 +127,14 @@ class ConfigGUI:
         tk.Label(frame0, text=self.config['general']['version']+f' {platform.system()}',bg=BG).grid(row=0, column=1, sticky=tk.W, pady=40,padx=40)
         row += 1
         
+        f=createFrame(row)
+        tk.Label(f, text="用户名:",bg=BG).grid(row=row, column=0, sticky=tk.W, pady=40,padx=40)
+        self.name_var = tk.StringVar(value=self.config['general']['name'])
+        fggggg = ttk.Entry(f, textvariable=self.name_var, width=20)
+        fggggg.grid(row=row, column=1, sticky=tk.W, pady=40,padx=40)
+        tk.Label(f, text="用于判断是否是自身消息", foreground="gray",bg=BG).grid(row=row, column=2, sticky=tk.W, pady=40,padx=40)
+        row += 1
+        
         frame0=createFrame(row)
         tk.Label(frame0, text="Token用量:",bg=BG).grid(row=0, column=0, sticky=tk.W, pady=40,padx=40)
         tk.Label(frame0, text=str(totalTokens),bg=BG).grid(row=0, column=1, sticky=tk.W, pady=40,padx=40)
@@ -157,8 +166,8 @@ class ConfigGUI:
         f=createFrame(row)
         tk.Label(f, text="解析图片数:",bg=BG).grid(row=row, column=0, sticky=tk.W, pady=40,padx=40)
         self.maxImageCount_var = tk.StringVar(value=self.config['general']['maxImageCount'])
-        max_img_entry = ttk.Entry(f, textvariable=self.maxImageCount_var, width=20)
-        max_img_entry.grid(row=row, column=1, sticky=tk.W, pady=40,padx=40)
+        fggggg = ttk.Entry(f, textvariable=self.maxImageCount_var, width=20)
+        fggggg.grid(row=row, column=1, sticky=tk.W, pady=40,padx=40)
         tk.Label(f, text="(本地模型解析>1张图片时速度极慢)", foreground="gray",bg=BG).grid(row=row, column=2, sticky=tk.W, pady=40,padx=40)
         row += 1
 
@@ -350,7 +359,11 @@ class ConfigGUI:
                 raise Exception("框选消息时长不是数字")
             if not isnumeric(self.remoteServerTimeout_var.get()):
                 raise Exception("远程服务器超时不是数字")
+            
+            self.config['general']['name']=self.name_var.get()
+            
             self.config['general']['width'] = self.width_var.get()
+            
 
             self.config['general']['height'] = self.height_var.get()
             self.config['general']['maxImageCount'] = self.maxImageCount_var.get()
@@ -370,6 +383,7 @@ class ConfigGUI:
             self.config['general']['system'] = self.system_text.get("1.0", tk.END).strip()
             self.config['general']['remote_server_timeout'] = self.remoteServerTimeout_var.get()
             self.config['general']['tab_times'] = self.tab_times_var.get()
+            
 
             # server_url 处理
             if self.server_var.get() == "custom":
