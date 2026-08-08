@@ -350,7 +350,12 @@ if __name__ == '__main__':
                     dockLog.setText("等待语言模型生成答案")
                     #send answer
                     click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
-
+                    
+                    hotkey("ctrl","a")
+                    time.sleep(0.2)
+                    press("backspace")
+                    time.sleep(0.2)
+                    
 
 
                     conversation_text = '\n'.join(list(conversationText))
