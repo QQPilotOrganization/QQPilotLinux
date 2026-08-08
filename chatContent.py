@@ -18,10 +18,14 @@ class ChatContent:
         self.ownByMyself = ownByMyself
         self.empty=True if self.text else False
     def report(self) -> str:
-        return f'{'[你]' if self.ownByMyself else ''}{self.username}: {self.text if self.text else "【空】"}\n{self.time}\n 图片：{[image for image in self.imagePaths if os.path.exists(image)] if [image for image in self.imagePaths if os.path.exists(image)] != [] else "无" }'
+        prefix = '[你]' if self.ownByMyself else ''
+        content = self.text if self.text else ""
+        images = [image for image in self.imagePaths if os.path.exists(image)]
+        images_str = str(images) if images else "无"
+        return f'{prefix}{self.username}: {content}\n{self.time}\n 图片：{images_str}'
     # 
     def __str__(self) -> str:
         if self.ownByMyself:
             return f"[time]\n{self.time} \n\n [username] \n {self.username} \n\n [content] \n {self.text}\n"
         else:
-            return f'{self.text if self.text else "【空】"}'
+            return f'{self.text if self.text else ""}'

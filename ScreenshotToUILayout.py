@@ -35,6 +35,7 @@ fileHandler.setFormatter(formatter)
 logger.addHandler(consoleHandler)
 logger.addHandler(fileHandler)
 
+import os
 import time
 import configparser
 from conversationStyleExtract import * 
@@ -89,7 +90,7 @@ if __name__ == '__main__':
         isVisionModel=config.getboolean('general','isVisionModel')
         ATDetect=config.getboolean('general','ATDetect')
         tab_times=config.getint('general','tab_times')
-        userName=config.get('general','name')
+        userName=config.get('general','name', '')
 
         print(f"{Fore.YELLOW}QQPilot {config.get('general','version')}{Fore.RESET}",end='\t')
         print(f"{Fore.CYAN}{platform.platform()}{Fore.RESET}")
@@ -213,8 +214,51 @@ if __name__ == '__main__':
                 # image.screenshot(*uploadImagePossibleActualSize)
 
                 break
+        
+        def UploadImageWithoutSend(upload_image_area):
+            image_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Images")
+            logger.info(image_dir)
+            
+            dirs = []
+            if not os.path.exists(image_dir):
+                logger.error("没有找到图片目录")
+            else:
+                dirs = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
+            
+            contains_image = False
+            image_extensions = {'.jpg', '.jpeg', '.png', '.gif'}
+            
+            for dir_path in dirs:
+                logger.info(dir_path)
+                ext = os.path.splitext(dir_path)[1].lower()
+                if ext in image_extensions:
+                    contains_image = True
+                    logger.info(f"Image:{dir_path}")
+                    break
+            
+            if os.path.exists(image_dir) and contains_image:
+                image.screenshot(*upload_image_area)
+                time.sleep(0.5)
                 
-                
+                copy_button_position = Vision.FindTemplates("screenshot.png", "uploadImage.png", 30, 1)
+                if len(copy_button_position) <= 0:
+                    logger.warning("使用模板匹配查找上传图片按钮失败")
+                    try:
+                        import subprocess
+                        if os.name == 'nt':
+                            subprocess.Popen("uploadImage2.exe").wait()
+                            time.sleep(0.2)
+                            hotkey('ctrl', 'v')
+                    except:
+                        pass
+                else:
+                    x, y = copy_button_position[0]
+                    x += upload_image_area[0]
+                    y += upload_image_area[1]
+                    click(x, y)
+                    time.sleep(4)
+                time.sleep(4)
+        
         while True:
             try:
                 # im=image.screenshot(*positionRect)
@@ -309,7 +353,8 @@ if __name__ == '__main__':
 
 
 
-                    print(f"{Fore.CYAN}{'\n'.join(list(conversationText))}{Fore.RESET}")
+                    conversation_text = '\n'.join(list(conversationText))
+                    print(f"{Fore.CYAN}{conversation_text}{Fore.RESET}")
                     
                     try:
                         result,tokenUsage=answer.getAnswer(ChatContents)
@@ -331,7 +376,13 @@ if __name__ == '__main__':
                     except:
                         result=""
                     if result.strip()=="":
-                        logger.info("退出会话")
+                        if withImage and sendImagePossibility>0:
+                            logger.warning("答案未生成,上传图片")
+                            UploadImageWithoutSend(uploadImagePossibleActualSize)
+                            hotkey('ctrl','enter')
+                            logger.info("退出会话")
+                        else:
+                            logger.error("答案未生成,退出会话")
                         GoBack()
                         continue
                     click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
