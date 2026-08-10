@@ -87,6 +87,13 @@ class UpgradeHelperApp:
 
                 if rel_path.name.lower() == 'config.ini':
                     self.merge_config_files(src_file, dst_file)
+                elif rel_path.name.lower() in ('system.txt', 'extra.json'):
+                    # 用户配置文件：目标已存在则保留用户内容（迁移），否则复制新版默认模板
+                    if dst_file.exists():
+                        self.log(f"保留配置文件(目标已存在): {dst_file}")
+                    else:
+                        shutil.copy2(src_file, dst_file)
+                        self.log(f"复制新配置模板: {dst_file}")
                 else:
                     shutil.copy2(src_file, dst_file)
                     self.log(f"复制文件: {dst_file}")

@@ -16,6 +16,8 @@ import configparser
 import os
 import platform
 
+import jsonEdit
+
 CONFIG_FILE = "config.ini"
 TOKENCOUNTFILE = 'tokencount.txt'
 totalTokens=0
@@ -223,6 +225,9 @@ class ConfigGUI:
 
         self.custom_entry = ttk.Entry(server_frame, textvariable=self.custom_server_var, width=30)
         self.custom_entry.pack(side=tk.LEFT, pady=40,padx=40)
+        self.forceOllamaApi_var = tk.BooleanVar(value=self.config['general'].getboolean('forceollamaapi'))
+        forceOllamaApi = tk.Checkbutton(server_frame,bg=BG, text="强制使用Ollama API", variable=self.forceOllamaApi_var)
+        forceOllamaApi.pack(side=tk.LEFT, pady=40,padx=40)   
 
         # 初始化自定义输入框内容
         current_url = self.config['general']['server_url']
@@ -235,6 +240,7 @@ class ConfigGUI:
 
         # scroll
         frame0=createFrame(row)
+
         tk.Label(frame0, text="框选消息时长 (秒):",bg=BG).grid(row=row, column=0, sticky=tk.W, pady=40,padx=40)
         self.scroll_var = tk.StringVar(value=self.config['general']['scroll'])
         scroll_entry = tk.Entry(frame0, textvariable=self.scroll_var, width=20)
@@ -298,6 +304,10 @@ class ConfigGUI:
         # system - 多行文本框 (增加高度)
         frame0=createFrame(row)
         tk.Label(frame0,bg=BG, text="提示文本 (system):").grid(row=row, column=0, sticky=tk.NW, pady=40,padx=40)
+        def o():
+            jsonEdit.Open("extra.json")
+        tk.Button(frame0, text="额外参数", command=o,bg="#0B310C", fg=BG,width=10).grid(row=row, column=3,pady=40,padx=40)
+
         self.system_text = tk.Text(frame0, width=60, height=12, wrap=tk.WORD)  # 增加高度并启用自动换行
         self.system_text.insert(tk.END, self.config['general']['system'])
         self.system_text.grid(row=row, column=1, columnspan=2, sticky=(tk.W, tk.E), pady=40,padx=40)
@@ -383,6 +393,7 @@ class ConfigGUI:
             self.config['general']['system'] = self.system_text.get("1.0", tk.END).strip()
             self.config['general']['remote_server_timeout'] = self.remoteServerTimeout_var.get()
             self.config['general']['tab_times'] = self.tab_times_var.get()
+            self.config['general']['forceollamaapi']=str(self.forceOllamaApi_var.get())
             
 
             # server_url 处理

@@ -96,8 +96,11 @@ def _print_token_usage(usage: Dict[str, Any], backend: str = "API"):
     total_tokens = usage.get('total_tokens', prompt_tokens + completion_tokens)
     
     print(f"\n[{backend}] Token 用量 | 输入: {prompt_tokens} | 输出: {completion_tokens} | 总计: {total_tokens}")
-
-
+extra={}
+try:
+    extra=json.loads(open('extra.json','r',encoding='utf8').read())
+except:
+    pass
 # ================= 核心推理函数 =================
 def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> tuple[Optional[str],int]:
     totalTokens=0
@@ -142,12 +145,16 @@ def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> tuple[Opti
             messages.append({"role": "system", "content": system_prompt})
         messages += concatenateText(text, imageList)
 
-        ollama_url = "http://localhost:11434/api/chat"
+        # ollama_url = "http://localhost:11434/api/chat"
+        ollama_url = "http://localhost:8080/api/chat"
         payload = {
             "model": modelName,
             "messages": messages,
             "stream": True
         }
+        
+        for k,v in extra.items():
+            payload[k]=v
         
         print(f"Ollama request: {json.dumps(payload, ensure_ascii=False)[:200]}...")
         
@@ -239,7 +246,8 @@ def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> tuple[Opti
             "temperature": 0.7,
             "stream": True  # 使用流式以实时输出
         }
-
+        for k,v in extra.items():
+            payload[k]=v
         print(f"OpenAI compatible request: {json.dumps(payload, ensure_ascii=False)[:200]}...")
 
         try:
@@ -320,7 +328,8 @@ if __name__ == '__main__':
 
     # 测试 Ollama
     useOllama = True
-    modelName = 'jingyaogong/minimind2:latest'
+    modelName = 'qwen3.5:0.8b'
+    
     print("\n=== Testing Ollama ===")
     answer = getAnswer([c, c2, c3])
     print(f"Answer: {answer}")
