@@ -4,301 +4,253 @@ import load
 from colorama import Fore
 import base64
 import os
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 import time
-import httpx
 import requests
 import json
 import re
 from chatContent import ChatContent
 
-# ================= 配置加载 =================
+# ================= 配置加载（对齐 Answer.cs 构造函数） =================
 config = configparser.ConfigParser()
 config.read('config.ini', encoding='utf-8')
 
-modelName: str = config['general']['modelName']
-server_url: str = config['general']['server_url']
-isVisionModel: bool = config.getboolean('general', 'isVisionModel')
-maxImageCount = config.getint('general', 'maxImageCount')
-remoteServerTimeout = config.getint('general', 'remote_server_timeout')
-API_KEY = config['general']['API_KEY']
 
-if API_KEY == 'None':
-    API_KEY = None
+def _cfg(key: str) -> str:
+    return config['general'][key]
+
+
+modelName: str = _cfg('modelname')
+server_url: str = _cfg('server_url')
+isVisionModel: bool = _cfg('isvisionmodel').lower() == 'true'
+maxImageCount: int = int(_cfg('maximagecount'))
+remoteServerTimeout: int = int(_cfg('remote_server_timeout'))
+forceOllamaAPI: bool = config.getboolean('general', 'forceollamaapi', fallback=False)
+apiKey: str = _cfg('api_key')
+# 系统提示从 config.ini 的 system 键读取（沿用旧版方式）
+sysPmpt: str = config.get('general', 'system', fallback='')
 
 useOllama = False
 builtInLanguageModel = False
-ollama_module = None
 tinylm = None
 
-MAX_LENGTH = 5000
-
-
-if server_url == 'builtin':
+# 后端选择（对齐 Answer.cs 构造函数）
+if forceOllamaAPI:
+    useOllama = True
+elif server_url.lower() == 'ollama':
+    server_url = 'http://localhost:11434/api/chat'
+    useOllama = True
+elif server_url.lower() == 'builtin':
     builtInLanguageModel = True
-    tinylm = importlib.import_module('TinyLangJaccard')
-if(server_url.lower()=='ollama'):
-    useOllama=True
+# 否则 server_url 是用户自定义的 base URL（如 http://192.168.1.100:8000/v1）
+
+MAX_LENGTH = 2048  # 对齐 C#；非流式请求，未用于截断
+
+# extra.json 中的字段会合并进请求体并覆盖同名键（对齐 C#）
+extra: Dict[str, Any] = {}
+try:
+    with open('extra.json', 'r', encoding='utf-8') as f:
+        extra = json.loads(f.read())
+except Exception:
+    pass
 
 # ================= 工具函数 =================
-def _imageToBase64(path: str) -> str:
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+
+def _image_to_base64(path: str) -> str:
+    with open(path, 'rb') as f:
+        return base64.b64encode(f.read()).decode('utf-8')
 
 
-def isTime(text):
-    pattern = r'\(?([0-2]?[0-9]):([0-5][0-9])\)?'
-    pattern2 = r'\(?([0-2]?[0-9]).([0-5][0-9])\)?'
-    matches = re.findall(pattern, text)
-    matches.extend(re.findall(pattern2, text))
-    valid_times = []
-    for hour_str, minute_str in matches:
-        hour = int(hour_str)
-        minute = int(minute_str)
-        if 0 <= hour <= 23:
-            valid_times.append(f"{hour:02d}:{minute:02d}")
+def isTime(text: str) -> Tuple[bool, List[str]]:
+    """对齐 Answer.cs 的 IsTime：校验小时 0-23、分钟 0-59"""
+    pattern1 = r'\(?([0-2]?[0-9]):([0-5][0-9])\)?'
+    pattern2 = r'\(?([0-2]?[0-9])\.([0-5][0-9])\)?'
+    valid_times: List[str] = []
+    for pattern in (pattern1, pattern2):
+        for m in re.finditer(pattern, text):
+            try:
+                h = int(m.group(1))
+                minute = int(m.group(2))
+            except ValueError:
+                continue
+            if 0 <= h <= 23 and 0 <= minute <= 59:
+                valid_times.append(f'{h:02d}:{minute:02d}')
     return len(valid_times) > 0, valid_times
 
 
-def concatenateText(text: list[ChatContent], images):
-    message = []
-    textList = text
-    for t in textList[:-1]:
-        if str(t) == '':
-            continue
-        if t.empty:
-            continue
-        role = "assistant" if t.ownByMyself else "user"
-        message.append({"role": role, "content": str(t)})
+def _concatenate_text(text_list: List[ChatContent], images: List[str]) -> List[Dict[str, Any]]:
+    """对齐 Answer.cs 的 ConcatenateText。
 
-    if len(textList) < 1:
-        textList = ['']
+    - 只收集同时出现在全局 images 列表（已按 MaxImageCount 截断）中的图片；
+    - 只有用户消息携带图片，assistant 消息只带文本；
+    - 既没有文本、也没有可发送的图片 → 整条消息跳过（纯图片消息必须保留）；
+    - Ollama 用纯 base64 数组；OpenAI 兼容 API 用 data: URI 分段数组。
+    """
+    messages: List[Dict[str, Any]] = []
 
-    last_content = str(textList[-1])
-    if isVisionModel and images:
-        valid_images = [p for p in images if os.path.exists(p)]
-        message.append({"role": "user", "content": last_content, "images": valid_images})
-    else:
-        message.append({"role": "user", "content": last_content})
-
-    if len(message) < 1:
-        message.append({"role": "user", "content": "_"})
-    return message
-
-
-def _print_token_usage(usage: Dict[str, Any], backend: str = "API"):
-    """参照 C# 实现打印 Token 用量"""
-    if not usage:
-        return
-    
-    prompt_tokens = usage.get('prompt_tokens', usage.get('input_tokens', 0))
-    completion_tokens = usage.get('completion_tokens', usage.get('output_tokens', 0))
-    total_tokens = usage.get('total_tokens', prompt_tokens + completion_tokens)
-    
-    print(f"\n[{backend}] Token 用量 | 输入: {prompt_tokens} | 输出: {completion_tokens} | 总计: {total_tokens}")
-extra={}
-try:
-    extra=json.loads(open('extra.json','r',encoding='utf8').read())
-except:
-    pass
-# ================= 核心推理函数 =================
-def getAnswer(text: list[ChatContent], systemPrompt: str = 'auto') -> tuple[Optional[str],int]:
-    totalTokens=0
-    if len(text) == 0:
-        return "",0
-
-    # 内置模型处理
-    if builtInLanguageModel:
-        for t in text[::-1]:
-            if t.text == '' or t.ownByMyself:
+    for t in text_list:
+        image_b64: List[str] = []        # 纯 base64 —— Ollama 使用
+        image_data_urls: List[str] = []  # data: URI —— OpenAI 兼容 API 使用
+        for img in t.imagePaths:
+            if img not in images:
                 continue
-            return tinylm.answer(t.text),0 # type: ignore
-        return '',0
+            b64 = _image_to_base64(img)
+            mime = 'image/png' if img.lower().endswith('.png') else 'image/jpeg'
+            image_b64.append(b64)
+            image_data_urls.append(f'data:{mime};base64,{b64}')
 
-    # 获取系统提示
-    system_prompt = config.get('general', 'system')
-    if systemPrompt != 'auto':
-        system_prompt = systemPrompt if systemPrompt and system_prompt != 'None' else ''
+        has_text = bool(t.text)
+        attach_images = (not t.ownByMyself) and len(image_b64) > 0
 
-    # 收集图片
-    imageList = []
-    imageCount = 0
-    for t in text:
+        if not has_text and not attach_images:
+            continue
+
+        text = str(t) if has_text else ''
+
+        message: Dict[str, Any] = {
+            'role': 'assistant' if t.ownByMyself else 'user',
+        }
+
+        if useOllama:
+            # Ollama /api/chat 格式：images 是与 content 平级的【纯 base64】数组（不带 data: 前缀）
+            message['content'] = text
+            if attach_images:
+                message['images'] = image_b64
+        else:
+            # OpenAI 兼容格式：content 可以是字符串，也可以是分段数组
+            if not attach_images:
+                message['content'] = text
+            else:
+                parts: List[Any] = [{'type': 'text', 'text': text}]
+                for url in image_data_urls:
+                    parts.append({'type': 'image_url', 'image_url': {'url': url}})
+                message['content'] = parts
+
+        messages.append(message)
+
+    return messages
+
+
+# ================= 核心推理函数 =================
+def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Optional[str], int]:
+    totalTokens = 0
+    if text is None or len(text) == 0:
+        return '', 0
+
+    # 内置模型（对齐 Answer.cs Builtin 分支：从后往前找第一条非空、非自己发的消息）
+    if builtInLanguageModel:
+        global tinylm
+        for t in reversed(text):
+            if not t.text or t.ownByMyself:
+                continue
+            if tinylm is None:
+                tinylm = importlib.import_module('TinyLangJaccard')
+            return tinylm.answer(t.text), 0
+        return '', 0
+
+    # 系统提示（"auto" → config.ini 的 system；"" / "None" → 空；否则用传入值）
+    if systemPrompt == 'auto':
+        final_system_prompt = sysPmpt
+    elif systemPrompt == '' or systemPrompt == 'None':
+        final_system_prompt = ''
+    else:
+        final_system_prompt = systemPrompt
+
+    # 收集图片：从后往前，跳过自己的消息，直到 MaxImageCount（对齐 C#）
+    image_list: List[str] = []
+    for t in reversed(text):
         if not t.ownByMyself:
-            for i in t.imagePaths:
-                if os.path.exists(i):
-                    imageList.append(i)
-                    imageCount += 1
-                    if imageCount >= maxImageCount:
+            for img in t.imagePaths:
+                if os.path.exists(img):
+                    image_list.append(img)
+                    if len(image_list) >= maxImageCount:
                         break
                 else:
-                    print(f"× 没有找到图片 {i}")
-            if imageCount >= maxImageCount:
+                    print(f'× 没有找到图片 {img}')
+            if len(image_list) >= maxImageCount:
                 break
 
-    startTime = time.time()
+    # 构建 messages
+    messages: List[Dict[str, Any]] = []
+    if final_system_prompt:
+        messages.append({'role': 'system', 'content': final_system_prompt})
+    messages += _concatenate_text(text, image_list)
 
-    # ========== Ollama 后端 (使用 requests) ==========
-    if useOllama:
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages += concatenateText(text, imageList)
+    # 构造请求体（对齐 C#）
+    request_body: Dict[str, Any] = {
+        'model': modelName,
+        'messages': messages,
+        'stream': False,
+    }
+    for k, v in extra.items():
+        request_body[k] = v
 
-        # ollama_url = "http://localhost:11434/api/chat"
-        ollama_url = "http://localhost:8080/api/chat"
-        payload = {
-            "model": modelName,
-            "messages": messages,
-            "stream": True
-        }
-        
-        for k,v in extra.items():
-            payload[k]=v
-        
-        print(f"Ollama request: {json.dumps(payload, ensure_ascii=False)[:200]}...")
-        
-        try:
-            result = ''
-            length = 0
-            # Ollama 流式响应中每个 chunk 可能包含 eval_count 等，但完整 usage 通常在最后一个 chunk
-            final_eval_info = {}
-            
-            with requests.post(ollama_url, json=payload, stream=True, timeout=remoteServerTimeout) as resp:
-                resp.raise_for_status()
-                for line in resp.iter_lines():
-                    if not line:
-                        continue
-                    chunk = json.loads(line.decode('utf-8'))
-                    token = chunk.get('message', {}).get('content', '')
-                    
-                    if token:
-                        result += token
-                        length += len(token)
-                        print(token, end='', flush=True)
-                        if length >= MAX_LENGTH:
-                            break
-                    
-                    # 捕获最后一个 chunk 中的统计信息
-                    if 'eval_count' in chunk:
-                        final_eval_info = chunk
-            
-            print()  # 换行
-            
-            # Ollama 的 token 统计字段与 OpenAI 不同，做映射
-            if final_eval_info:
-                usage_map = {
-                    'prompt_tokens': final_eval_info.get('prompt_eval_count', 0),
-                    'completion_tokens': final_eval_info.get('eval_count', 0),
-                    'total_tokens': final_eval_info.get('prompt_eval_count', 0)+final_eval_info.get('eval_count', 0)
-                }
-                totalTokens=final_eval_info.get('prompt_eval_count', 0)+final_eval_info.get('eval_count', 0);
-                _print_token_usage(usage_map, backend="Ollama")
-                
-            print(f'用时{time.time()-startTime:.2f}s')
-            return result,totalTokens
-            
-        except Exception as e:
-            print(f"Ollama request failed: {e}")
-            return None,0
+    # 调试：写出完整请求体（对齐 C# dest.json）
+    try:
+        with open('dest.json', 'w', encoding='utf-8') as f:
+            json.dump(request_body, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
-    # ========== OpenAI 兼容后端 (使用 requests) ==========
-    else:
-        headers = {"Content-Type": "application/json"}
-        if API_KEY:
-            headers["Authorization"] = f"Bearer {API_KEY}"
+    # Headers（对齐 C#：API_KEY 非空且不是 localhost 时才带 Bearer）
+    headers = {'Content-Type': 'application/json'}
+    if apiKey and 'localhost' not in server_url and '127.0.0.1' not in server_url:
+        headers['Authorization'] = f'Bearer {apiKey}'
 
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
+    url = server_url if useOllama else f'{server_url}/chat/completions'
 
-        # 构建消息体
-        if not (isVisionModel and imageList):
-            for t in text:
-                role = "assistant" if t.ownByMyself else "user"
-                messages.append({"role": role, "content": str(t)})
-            if messages and messages[-1]["role"] == "assistant":
-                messages.append({"role": "user", "content": ""})
+    start_time = time.time()
+    try:
+        print(f'Sending request to: {url}')
+
+        resp = requests.post(url, json=request_body, headers=headers, timeout=remoteServerTimeout)
+        response_body = resp.content.decode('utf-8', errors='replace')
+
+        if resp.status_code < 200 or resp.status_code >= 300:
+            print(f'API Error: {resp.status_code} - {response_body}')
+            return None, 0
+
+        print('\n\nResponse:\n')
+        print(response_body)
+
+        doc = json.loads(response_body)
+
+        if useOllama:
+            answer_text = doc.get('message', {}).get('content')
         else:
-            for t in text[:-1]:
-                role = "assistant" if t.ownByMyself else "user"
-                messages.append({"role": role, "content": str(t)})
+            answer_text = doc.get('choices', [{}])[0].get('message', {}).get('content')
 
-            last_t = text[-1]
-            final_content: List[Dict] = [{"type": "text", "text": str(last_t)}]
-            for img_path in imageList:
-                if not os.path.isfile(img_path):
-                    print(f"[ERROR] Image file not found: {img_path}")
-                    continue
-                b64_image = _imageToBase64(img_path)
-                mime_type = "image/jpeg" if img_path.lower().endswith(('.jpg', '.jpeg')) else "image/png"
-                final_content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{mime_type};base64,{b64_image}"}
-                })
-            messages.append({"role": "user", "content": final_content})
+        # Token 用量（对齐 C#：只读 prompt_tokens / completion_tokens / total_tokens，缺失为 0）
+        usage = doc.get('usage')
+        if usage is not None:
+            prompt_tokens = usage.get('prompt_tokens', 0) or 0
+            completion_tokens = usage.get('completion_tokens', 0) or 0
+            total_tokens = usage.get('total_tokens', 0) or 0
+            print(f'Token 用量: 输入 {prompt_tokens} | 输出 {completion_tokens} | 总计 {total_tokens}')
+            totalTokens = total_tokens
 
-        api_url = f"{server_url.rstrip('/')}/chat/completions"
-        payload = {
-            "model": modelName,
-            "messages": messages,
-            "max_tokens": MAX_LENGTH,
-            "temperature": 0.7,
-            "stream": True  # 使用流式以实时输出
-        }
-        for k,v in extra.items():
-            payload[k]=v
-        print(f"OpenAI compatible request: {json.dumps(payload, ensure_ascii=False)[:200]}...")
-
+        # 推理内容（Deepseek reasoning_content / Ollama thinking，对齐 C#）
         try:
-            result = ''
-            usage_data = None
-            
-            with requests.post(api_url, json=payload, headers=headers, stream=True, timeout=remoteServerTimeout) as resp:
-                resp.raise_for_status()
-                for line in resp.iter_lines():
-                    if not line:
-                        continue
-                    decoded = line.decode('utf-8')
-                    if not decoded.startswith('data:'):
-                        continue
-                    data_str = decoded[len('data:'):].strip()
-                    if data_str == '[DONE]':
-                        break
-                    
-                    try:
-                        chunk = json.loads(data_str)
-                    except json.JSONDecodeError:
-                        continue
-                    
-                    # 提取内容
-                    delta = chunk.get('choices', [{}])[0].get('delta', {})
-                    token = delta.get('content', '')
-                    if token:
-                        result += token
-                        print(token, end='', flush=True)
-                    
-                    # 部分 API 在最后一个 chunk 返回 usage
-                    if 'usage' in chunk and chunk['usage']:
-                        usage_data = chunk['usage']
+            reason = doc.get('choices', [{}])[0].get('message', {}).get('reasoning_content')
+            if reason is None:
+                reason = doc.get('message', {}).get('thinking')
+        except Exception:
+            reason = None
+        if reason is not None:
+            print(f'{Fore.LIGHTBLACK_EX}<think>\n{reason}\n</think>{Fore.RESET}')
 
-            print()
-            
-            # 如果流式没返回 usage，尝试从非流式获取（可选优化）
-            # 这里直接使用流式中获取到的，或者打印提示
-            
-            if usage_data:
-                totalTokens=usage_data.get('total_tokens', 0)
-                _print_token_usage(usage_data, backend="OpenAI-Compatible")
-            else:
-                print("[INFO] 当前 API 流式响应未返回 Token 用量信息")
-                
-            print(f'用时{time.time()-startTime:.2f}s')
-            return (result.strip() if result else None),totalTokens
+        elapsed = time.time() - start_time
+        print(f'用时 {elapsed:.2f}s')
 
-        except Exception as e:
-            print(f"[ERROR] Failed to get answer: {e}")
-            return None,0
+        if answer_text is not None:
+            answer_text = answer_text.strip()
+        print(answer_text if answer_text is not None else '')
+
+        return answer_text, totalTokens
+
+    except Exception as e:
+        print(f'HTTP request failed: {e}')
+        return None, 0
 
 
 def get_answer_as_string(text: str, system_prompt):
@@ -308,49 +260,44 @@ def get_answer_as_string(text: str, system_prompt):
 # ================= 测试入口 =================
 if __name__ == '__main__':
     c = ChatContent(
-        username='', imagePaths=[], 
+        username='', imagePaths=[],
         text='解释图片\n2\n3\n4\n5',
-        time=f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}',
-        ownByMyself=False
+        time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+        ownByMyself=False,
     )
     c2 = ChatContent(
-        username='', imagePaths=[r"D:\Pictures\111.PNG"],
+        username='', imagePaths=[r'D:\Pictures\111.PNG'],
         text='12345',
-        time=f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}',
-        ownByMyself=True
+        time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+        ownByMyself=True,
     )
     c3 = ChatContent(
         username='', imagePaths=[],
         text='678910',
-        time=f'{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}',
-        ownByMyself=False
+        time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+        ownByMyself=False,
     )
 
-    # 测试 Ollama
+    # 测试 Ollama（对齐 C# Test()）
     useOllama = True
+    server_url = 'http://localhost:8080/api/chat'
     modelName = 'qwen3.5:0.8b'
-    
-    print("\n=== Testing Ollama ===")
-    answer = getAnswer([c, c2, c3])
-    print(f"Answer: {answer}")
 
-    # 测试 Vision
-    print("\n=== Testing Ollama Vision ===")
-    isVisionModel = True
+    print('\n=== Testing Ollama ===')
     answer = getAnswer([c, c2, c3])
-    print(f"Answer: {answer}")
+    print(f'Answer: {answer}')
 
     # 测试 Built-in
-    print("\n=== Testing Built-in Model ===")
-    useOllama = False
+    print('\n=== Testing Built-in Model ===')
     builtInLanguageModel = True
     answer = getAnswer([c, c2, c3])
-    print(f"Answer: {answer}")
+    print(f'Answer: {answer}')
 
     # 测试 OpenAI Compatible
-    print("\n=== Testing OpenAI Compatible API ===")
+    print('\n=== Testing OpenAI Compatible API ===')
     builtInLanguageModel = False
+    useOllama = False
     server_url = 'http://localhost:8000/v1'
-    API_KEY = '21r234242'
+    apiKey = '21r234242'
     answer = getAnswer([c, c2, c3])
-    print(f"Answer: {answer}")
+    print(f'Answer: {answer}')
