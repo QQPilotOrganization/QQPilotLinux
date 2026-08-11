@@ -20,7 +20,10 @@
 </div>
 
 
+## 1.5.15
 
+对于强制使用Ollama API，填写类似https://example.com 即可，会自动定向到 https://example.com/api/chat。
+否则填写https://example.com/v1 定向到 https://example.com/v1/chat/completions/
 
 
 > 使用纯视觉 + 窗口自动化实现 QQ 消息自动回复，**零 API 依赖、零注入、低封号风险**。  
@@ -182,6 +185,7 @@ ollama pull huihui_ai/deepseek-r1-abliterated:8b
 | 字体大小           | 设为 **“最小”**            |
 | 聊天背景           | 使用 **默认白色背景**      |
 | 系统显示缩放       | **必须为 100%**（不可缩放）|
+
 
 > 🔍 QQPilot 通过 UI 坐标识别消息，任何界面变动（如缩放、深色主题）都可能导致识别失败。
 
