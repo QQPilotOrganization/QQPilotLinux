@@ -21,7 +21,7 @@ def _cfg(key: str) -> str:
 
 
 modelName: str = _cfg('modelname')
-server_url: str = _cfg('server_url')
+serverUrl: str = _cfg('server_url')
 isVisionModel: bool = _cfg('isvisionmodel').lower() == 'true'
 maxImageCount: int = int(_cfg('maximagecount'))
 remoteServerTimeout: int = int(_cfg('remote_server_timeout'))
@@ -37,10 +37,11 @@ tinylm = None
 # 后端选择（对齐 Answer.cs 构造函数）
 if forceOllamaAPI:
     useOllama = True
-elif server_url.lower() == 'ollama':
-    server_url = 'http://localhost:11434/api/chat'
+    serverUrl+='/api/chat'
+elif serverUrl.lower() == 'ollama':
+    serverUrl = 'http://localhost:11434/api/chat'
     useOllama = True
-elif server_url.lower() == 'builtin':
+elif serverUrl.lower() == 'builtin':
     builtInLanguageModel = True
 # 否则 server_url 是用户自定义的 base URL（如 http://192.168.1.100:8000/v1）
 
@@ -158,17 +159,18 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
 
     # 收集图片：从后往前，跳过自己的消息，直到 MaxImageCount（对齐 C#）
     image_list: List[str] = []
-    for t in reversed(text):
-        if not t.ownByMyself:
-            for img in t.imagePaths:
-                if os.path.exists(img):
-                    image_list.append(img)
-                    if len(image_list) >= maxImageCount:
-                        break
-                else:
-                    print(f'× 没有找到图片 {img}')
-            if len(image_list) >= maxImageCount:
-                break
+    if isVisionModel:
+        for t in reversed(text):
+            if not t.ownByMyself:
+                for img in t.imagePaths:
+                    if os.path.exists(img):
+                        image_list.append(img)
+                        if len(image_list) >= maxImageCount:
+                            break
+                    else:
+                        print(f'× 没有找到图片 {img}')
+                if len(image_list) >= maxImageCount:
+                    break
 
     # 构建 messages
     messages: List[Dict[str, Any]] = []
@@ -194,10 +196,10 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
 
     # Headers（对齐 C#：API_KEY 非空且不是 localhost 时才带 Bearer）
     headers = {'Content-Type': 'application/json'}
-    if apiKey and 'localhost' not in server_url and '127.0.0.1' not in server_url:
+    if apiKey and 'localhost' not in serverUrl and '127.0.0.1' not in serverUrl:
         headers['Authorization'] = f'Bearer {apiKey}'
 
-    url = server_url if useOllama else f'{server_url}/chat/completions'
+    url = serverUrl if useOllama else f'{serverUrl}/chat/completions'
 
     start_time = time.time()
     try:
@@ -280,7 +282,7 @@ if __name__ == '__main__':
 
     # 测试 Ollama（对齐 C# Test()）
     useOllama = True
-    server_url = 'http://localhost:8080/api/chat'
+    serverUrl = 'http://localhost:8080/api/chat'
     modelName = 'qwen3.5:0.8b'
 
     print('\n=== Testing Ollama ===')
@@ -297,7 +299,7 @@ if __name__ == '__main__':
     print('\n=== Testing OpenAI Compatible API ===')
     builtInLanguageModel = False
     useOllama = False
-    server_url = 'http://localhost:8000/v1'
+    serverUrl = 'http://localhost:8000/v1'
     apiKey = '21r234242'
     answer = getAnswer([c, c2, c3])
     print(f'Answer: {answer}')
