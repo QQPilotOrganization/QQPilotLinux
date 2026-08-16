@@ -41,7 +41,16 @@ def mock_chat_completions():
                 "index": 0,
                 "message": {
                     "role": "assistant",
-                    "content": "✅ 这是来自 Flask Mock OpenAI 服务器的测试回复。你的请求结构正确！"
+                    "content": "✅ 这是来自 Flask Mock OpenAI 服务器的测试回复。你的请求结构正确！",
+                    
+                    "images": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA"
+                                }
+                            }
+                    ]
                 },
                 "finish_reason": "stop"
             }
