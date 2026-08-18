@@ -214,7 +214,12 @@ if __name__ == '__main__':
                 # image.screenshot(*uploadImagePossibleActualSize)
 
                 break
-        
+        def CleanInputSection():
+            HotKey('ctrl','a')
+            time.sleep(0.2)
+            press_key('backspace')
+            time.sleep(0.2)
+            
         def UploadImageWithoutSend(upload_image_area):
             image_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Images")
             logger.info(image_dir)
@@ -248,7 +253,7 @@ if __name__ == '__main__':
                         if os.name == 'nt':
                             subprocess.Popen("uploadImage2.exe").wait()
                             time.sleep(0.2)
-                            hotkey('ctrl', 'v')
+                            HotKey('ctrl', 'v')
                     except:
                         pass
                 else:
@@ -351,7 +356,7 @@ if __name__ == '__main__':
                     #send answer
                     click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
                     
-                    hotkey("ctrl","a")
+                    HotKey("ctrl","a")
                     time.sleep(0.2)
                     press("backspace")
                     time.sleep(0.2)
@@ -384,7 +389,7 @@ if __name__ == '__main__':
                         if withImage and sendImagePossibility>0:
                             logger.warning("答案未生成,上传图片")
                             UploadImageWithoutSend(uploadImagePossibleActualSize)
-                            hotkey('ctrl','enter')
+                            HotKey('ctrl','enter')
                             logger.info("退出会话")
                         else:
                             logger.error("答案未生成,退出会话")
@@ -402,7 +407,7 @@ if __name__ == '__main__':
                     # click "send" button
                     time.sleep(2)
                     logger.info("发送消息")
-                    hotkey('ctrl','enter')
+                    HotKey('ctrl','enter')
                     dockLog.setText("发送消息 🎉")
                     # click(sendButtonActualSize[0]+((sendButtonActualSize[2]-sendButtonActualSize[0])//2)
                     #         ,sendButtonActualSize[1]+((sendButtonActualSize[3]-sendButtonActualSize[1])//2))
@@ -411,6 +416,7 @@ if __name__ == '__main__':
 
                     # exit conversation
                     logger.info("退出会话")
+                    CleanInputSection()
                     GoBack()
                 # else:
                 #     if isVisionModel:

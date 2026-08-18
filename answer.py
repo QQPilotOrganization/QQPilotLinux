@@ -96,7 +96,7 @@ def _concatenate_text(text_list: List[ChatContent], images: List[str]) -> List[D
             if img not in images:
                 continue
             b64 = _image_to_base64(img)
-            mime = 'image/png' if img.lower().endswith('.png') else 'image/jpeg'
+            mime = 'image/png' if img.lower().endswith('.png') else 'image/webp' if img.lower().endswith('.webp')  else 'image/jpeg'
             image_b64.append(b64)
             image_data_urls.append(f'data:{mime};base64,{b64}')
 

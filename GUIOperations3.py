@@ -79,7 +79,7 @@ def press_key(key_name: str) -> bool:
     """
     pyautogui.press(key_name)
     return True
-def hotkey(modifier: str, key: str) -> bool:
+def HotKey(modifier: str, key: str) -> bool:
     """
     按下组合键（支持字母、数字、功能键名）
     示例: hotkey('ctrl', 'c'), hotkey('alt', 'F4')
@@ -130,7 +130,7 @@ def PasteTextToSection(text:str,section: tuple[int, int, int, int]):
     pyperclip.copy(text)
     time.sleep(0.2)
     clickCenter(section)
-    hotkey("ctrl","v")
+    HotKey("ctrl","v")
     time.sleep(0.8)
     
 def SendText(text:str,section: tuple[int, int, int, int]):
@@ -151,7 +151,7 @@ def SendText(text:str,section: tuple[int, int, int, int]):
         PasteTextToSection(m[-1],section)
         clickCenter(section)
         time.sleep(200)
-        hotkey('ctrl','enter')
+        HotKey('ctrl','enter')
             
     # for i in text:
     #     if i=='\n':
