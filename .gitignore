@@ -1,7 +1,7 @@
 update/bin
 update/obj
-*.png
-*.bmp
+# *.png
+# *.bmp
 *.dll
 test
 build
