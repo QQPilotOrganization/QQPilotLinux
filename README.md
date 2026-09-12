@@ -133,7 +133,7 @@ chmod +x ./*.sh  # 确保脚本可执行
 
 ```bash
 # 使用清华源加速 pip 安装
-uv pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+uv sync -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ### 7. 安装系统依赖
@@ -151,7 +151,7 @@ sudo apt install python3-tk python3-xlib
 # 某些桌面环境（如 Wayland）可能需要额外配置
 ```
 
-> 💡 **Wayland 用户注意**：`pyautogui` 在 Wayland 下通常无法工作。建议切换到 **X11 会话**（登录时选择 “GNOME on Xorg” 等）。
+> 💡 **Wayland 用户注意**：`pyautogui` 在 Wayland 下无法工作。建议切换到 **X11 会话**（登录时选择 “GNOME on Xorg” 等）。
 
 ---
 
@@ -251,7 +251,7 @@ ollama pull huihui_ai/deepseek-r1-abliterated:8b
 
 ## 📄 开源协议
 
-本项目采用 [MIT License](LICENSE)。欢迎 Star ⭐、Fork 🍴 与贡献代码！
+本项目采用 [GPL3 License](LICENSE)。欢迎 Star ⭐、Fork 🍴 与贡献代码！
 
 ---
 

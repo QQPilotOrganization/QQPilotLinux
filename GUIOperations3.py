@@ -5,6 +5,23 @@ import configparser
 import time
 import os
 import subprocess
+from windmouse.pyautogui_controller import PyautoguiMouseController
+from windmouse.core import Coordinate
+
+# Initialize the controller
+mouse = PyautoguiMouseController(    
+    max_step=55,            # Maximum speed (default: 15)
+    damped_distance=12      # Distance where movement starts to slow (default: 12)
+    )
+
+# Set destination coordinates
+
+def smoothMoveStart():
+    global mouse
+    mouse.move_to_target(
+        tick_delay=0,      
+        step_duration=0.001     
+    )
 from colorama import Fore
 # from conversationStyleExtract import indentificationString
 config = configparser.ConfigParser()
@@ -37,7 +54,11 @@ def focus():
     subprocess.run(['bash','./left.sh'])
 
 def mouse_move(x: int, y: int) -> bool:
-    pyautogui.moveTo(x, y)
+    # pyautogui.moveTo(x, y)
+    global mouse
+    mouse.dest_position = (Coordinate(x), Coordinate(y))
+    smoothMoveStart()
+    
     return True
 def mouse_down() -> bool:
     pyautogui.mouseDown()
@@ -48,6 +69,8 @@ def mouse_up() -> bool:
     return True
 
 def click(x: int, y: int) -> bool:
+    mouse.dest_position = (Coordinate(x), Coordinate(y))
+    smoothMoveStart()
     pyautogui.click(x, y)
     return True
 
