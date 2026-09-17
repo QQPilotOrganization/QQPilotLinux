@@ -17,7 +17,9 @@ config.read('config.ini', encoding='utf-8')
 
 
 def _cfg(key: str) -> str:
-    return config['general'][key]
+    # config.ini 里习惯用 "; 说明" 写行内注释（如 api_key = abcd ; authorization），
+    # configparser 默认不剥离，这里统一处理，避免 int() 失败或把注释当成配置值。
+    return config['general'][key].split(';', 1)[0].split('#', 1)[0].strip()
 
 
 modelName: str = _cfg('modelname')
@@ -32,10 +34,19 @@ sysPmpt: str = config.get('general', 'system', fallback='')
 
 useOllama = False
 builtInLanguageModel = False
+useOneBot = False
 tinylm = None
 
 # 后端选择（对齐 Answer.cs 构造函数）
-if forceOllamaAPI:
+if serverUrl.lower() == 'onebot':
+    # server_url=onebot：QQPilotLinux 直接用 OneBot v11 协议连接 OneBot
+    # （协议实现参考 CompletionConnector）。config.ini 的
+    # websocket_server / account_id / reverse 生效，
+    # api_key 作为 CompletionConnector 的 authorization。
+    import onebotConnector
+    onebotConnector.start()
+    useOneBot = True
+elif forceOllamaAPI:
     useOllama = True
     serverUrl+='/api/chat'
 elif serverUrl.lower() == 'ollama':
@@ -148,6 +159,13 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
                 tinylm = importlib.import_module('TinyLangJaccard')
             return tinylm.answer(t.text), 0
         return '', 0
+
+    # OneBot 直连：把消息用 OneBot v11 协议发给 OneBot 端（如 MaiBot），
+    # 等它的 send_*_msg 回复作为答案（协议实现参考 CompletionConnector）。
+    if useOneBot:
+        import onebotConnector
+        reply = onebotConnector.get_answer(text, timeout=remoteServerTimeout)
+        return (reply if reply is not None else ''), 0
 
     # 系统提示（"auto" → config.ini 的 system；"" / "None" → 空；否则用传入值）
     if systemPrompt == 'auto':

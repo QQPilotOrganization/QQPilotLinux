@@ -77,9 +77,13 @@ if __name__ == '__main__':
     try:
 
         time.sleep(1)
-
+        match os.environ.get('XDG_SESSION_TYPE',''):
+            case 'wayland':
+                logger.warning("wayland下可能无法正常使用")
+            case '':
+                logger.warning("找不到显示服务器，正在运行Windows或者WSL吗？")
         config=configparser.ConfigParser()
-        config.read('config.ini',encoding='utf-8')
+        config.read(filenames='config.ini',encoding='utf-8')
         size: tuple[int, int]=int(config.get('general','width')),int(config.get('general','height'))
 
         scale=float(config.get('general','scale'))
@@ -91,8 +95,8 @@ if __name__ == '__main__':
         isVisionModel=config.getboolean('general','isVisionModel')
         ATDetect=config.getboolean('general','ATDetect')
         tab_times=config.getint('general','tab_times')
-        userName=config.get('general','name', '')
-        sleep2=config.getint('general','sleep',0)
+        userName=config.get('general','name')
+        sleep2=config.getint('general','sleep')
 
         print(f"{Fore.YELLOW}QQPilot {config.get('general','version')}{Fore.RESET}",end='\t')
         print(f"{Fore.CYAN}{platform.platform()}{Fore.RESET}")
@@ -118,7 +122,12 @@ if __name__ == '__main__':
             time.sleep(1)
                 
 
-        
+        logger.warning("======================================================")
+        logger.warning("")
+        logger.warning("\t使用时请勿移动鼠标！")
+        logger.warning("")
+        logger.warning("======================================================");
+
         
         size=(int(size[0]*scale),int(size[1]*scale))
 

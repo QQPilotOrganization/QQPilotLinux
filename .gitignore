@@ -378,3 +378,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# CompletionConnector 运行时生成的数据库
+ChatManager.db
+IncomingMessage.sqlite3

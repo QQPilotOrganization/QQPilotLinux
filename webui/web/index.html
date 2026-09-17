@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QQPilot</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand-reticle" aria-hidden="true"><span></span></span>
+      <span class="brand-text">
+        <strong>QQPilot</strong>
+        <small id="brandSub" style="display:none;">neko</small>
+      </span>
+    </div>
+
+    <nav class="nav" id="nav" aria-label="功能"></nav>
+
+    <div class="rail-foot">
+      <div class="pilot" id="pilot">
+        <span class="pilot-lamp" aria-hidden="true"></span>
+        <span class="pilot-text">
+          <strong id="pilotState">未运行</strong>
+          <small id="pilotMeta">—</small>
+        </span>
+      </div>
+      <button class="rail-action" id="railLaunch" type="button">启动 QQPilot</button>
+    </div>
+  </aside>
+
+  <main class="canvas">
+    <header class="page-head">
+      <div class="page-title">
+        <h1 id="pageTitle">启动台</h1>
+        <p id="pageLede" class="lede"></p>
+      </div>
+      <div class="page-actions" id="pageActions"></div>
+    </header>
+    <section id="view" class="view" aria-live="polite"></section>
+  </main>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="boot" class="boot">
+  <div class="boot-inner">
+    <span class="boot-reticle" aria-hidden="true"></span>
+    <p id="bootText">正在连接桌面窗口…</p>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

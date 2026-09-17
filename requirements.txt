@@ -1,8 +1,0 @@
-requests
-colorama
-pyperclip
-flask
-pillow
-pyautogui
-pytweening
-opencv-python

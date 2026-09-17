@@ -1,0 +1,27 @@
+﻿{
+    //鉴权
+    authorization: "e3423",
+
+    //反向websocket模式，CompletionConnector只支持正向websocket和反向websocket
+    reverse: true,
+
+    //连接或者提供的服务器
+    websocket_server: "ws://localhost:3001",
+
+    //翻译的实现，使用对应py文件的内容
+    translation_impl: "qqpilotTranslation",
+
+    //账号，可以随意填写
+    account_id: "80586",
+
+    //昵称
+    nickname: "nickname!",
+
+    //对http超时时长。
+    timeout: 200,
+
+    
+    // URL 
+    host:'0.0.0.0',
+    port:7749
+}

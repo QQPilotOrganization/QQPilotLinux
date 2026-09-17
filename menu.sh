@@ -1,1 +1,1 @@
-./PythonPath.sh menu.py
+./PythonPath.sh ./webui/app.py

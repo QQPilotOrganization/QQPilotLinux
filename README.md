@@ -108,13 +108,11 @@ uv python list
 
 ## 🛠️ 安装 QQPilot
 
-### 4. 下载并解压 QQPilot
-
-从 Releases 页面下载 **Linux 版 ZIP 包**，然后解压：
+### 4. 下载QQPilot
 
 ```bash
-unzip *.zip -d QQPilot
-cd QQPilot
+git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
+cd QQPilotLinux
 ```
 
 ---
@@ -151,7 +149,7 @@ sudo apt install python3-tk python3-xlib
 # 某些桌面环境（如 Wayland）可能需要额外配置
 ```
 
-> 💡 **Wayland 用户注意**：`pyautogui` 在 Wayland 下无法工作。建议切换到 **X11 会话**（登录时选择 “GNOME on Xorg” 等）。
+> 💡 **Wayland 用户注意**：`pyautogui` 在 Wayland 下无法工作。建议切换到 **X11 会话**。
 
 ---
 
@@ -182,7 +180,7 @@ sudo apt install python3-tk python3-xlib
 |模型名称    | 填写使用的模型          |
 |视觉模型    | 选定的模型是否是视觉模型，如果不是，则不会传任何图片给API          |
 |API Key|填写LLM 提供商的API Key，如果是Ollama，可以填写随机值|
-|服务器|支持直接使用Ollama(http://localhost:11434/api/chat),内置模型（Jaccard）和填写URL。填写类似https://example.com/v1 定向到 https://example.com/v1/chat/completions/，若开启 **强制使用Ollama API** ，填写类似https://example.com 即可，会自动定向到 https://example.com/api/chat|
+|服务器|支持直接使用Ollama(http://localhost:11434/api/chat),内置模型（Jaccard）、OneBot 直连和填写URL。填写类似https://example.com/v1 定向到 https://example.com/v1/chat/completions/，若开启 **强制使用Ollama API** ，填写类似https://example.com 即可，会自动定向到 https://example.com/api/chat。选择 **OneBot** 时，QQPilot 直接用 OneBot v11 协议连接机器人后端（如 MaiBot），此时 `websocket_server` / `account_id` / `reverse` 生效，API Key 作为其 authorization|
 |框选消息时长|选择消息的长度随时长的增加而增加|
 |请求的额外参数|API请求的额外参数，`{"think":false}`可以让Ollama API 的模型不思考 |
 |自动点击登录|启动后自动寻找登录按钮并点击（建议使用QQ的自动登录） |
@@ -192,6 +190,29 @@ sudo apt install python3-tk python3-xlib
 |提示文本|System Prompt|
 
 ---
+
+## 🖥️ 统一图形界面（pywebview）
+
+原先 6 个独立的 tkinter 窗口已合并为一个网页界面，由 [pywebview](https://pywebview.flowrl.com/) 渲染：
+
+| 页面 | 原来的入口 | 现在 |
+|------|-----------|------|
+| 启动台 | `menu.sh` | 启动/停止主程序，查看版本与 Token 用量 |
+| 运行设置 | `option.sh` | 全部 config.ini 选项，含 OneBot 直连参数 |
+| 扩展管理 | `ExtensionViewer.sh` | 启用/停用 `Extensions/` 下的扩展 |
+| 升级助手 | `LUpgrade.sh` | 复制到目标目录并保留个人配置 |
+| 图片导入 | `ImageImport.sh` | 批量复制图片到 `Images/` |
+| 额外参数 | `jsonEdit.py` | 编辑 `extra.json` |
+
+`menu.sh`、`option.sh`、`ExtensionViewer.sh`、`LUpgrade.sh`、`ImageImport.sh` 都打开同一个窗口，
+只是默认停在不同页面；界面源码在 `webui/`（`webui/app.py` 是 Python↔JS 桥，`webui/web/` 是前端）。
+
+> Linux 上 pywebview 需要额外的 WebView 后端，任选其一：
+> `uv pip install "pywebview[qt]"`（纯 pip，推荐），或安装 GTK 后端
+> `sudo apt install gir1.2-webkit2-4.1 python3-gi` 后再 `uv pip install "pywebview[gtk]"`。
+
+---
+
 
 ## 🧠 推荐：启用本地大模型（Ollama）
 
@@ -234,7 +255,8 @@ ollama pull huihui_ai/deepseek-r1-abliterated:8b
 
 ## 🛠️ 编译说明（开发者）
 
-本项目基于 **Python 3.14** 开发，依赖见 `requirements.txt`。
+本项目基于 **Python 3.14** 开发，依赖见 `pyproject.toml`（用 `uv sync` 安装/更新）。
+图形界面基于 pywebview：`webui/app.py` 提供 Python↔JS 桥，`webui/web/` 是纯静态前端。
 
 ---
 
