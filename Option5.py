@@ -217,7 +217,8 @@ class ConfigGUI:
 
         self.radio_ollama = tk.Radiobutton(server_frame,bg=BG, text="Ollama", variable=self.server_var, value="ollama")
         self.radio_builtin = tk.Radiobutton(server_frame,bg=BG, text="内置模型", variable=self.server_var, value="builtin")
-        self.radio_custom = tk.Radiobutton(server_frame,bg=BG, text="自定义:", variable=self.server_var, value="custom")
+        self.radio_custom = tk.Radiobutton(server_frame,bg=BG, text="Chat Completion:", variable=self.server_var, value="custom")
+        self.radio_custom = tk.Radiobutton(server_frame,bg=BG, text="OneBot", variable=self.server_var, value="OneBot")
 
         self.radio_ollama.pack(side=tk.LEFT, pady=40,padx=40)
         self.radio_builtin.pack(side=tk.LEFT, pady=40,padx=40)
@@ -315,6 +316,9 @@ class ConfigGUI:
         frame0=tk.Frame(frame)
         frame0.grid(row=row+1,column=0,sticky=(tk.W,tk.E),columnspan=3,)
         
+        #TODO:sleep ->发送消息后等待（秒）.
+        
+        
         # 添加垂直滚动条到文本框
         text_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=self.system_text.yview)
         text_scrollbar.grid(row=row, column=3, sticky=(tk.N, tk.S), pady=2)
@@ -349,6 +353,8 @@ class ConfigGUI:
         # 绑定 radio 按钮切换逻辑
         self.server_var.trace_add("write", self.on_server_radio_change)
         self.on_server_radio_change()
+        
+        
 
     def on_server_radio_change(self, *args):
         if self.server_var.get() == "custom":

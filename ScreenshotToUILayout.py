@@ -12,6 +12,7 @@ from typing import Any, Generator, Literal
 from random import randint
 import subprocess
 import platform
+import tqdm
 # import upload
 TOKENCOUNTFILE = 'tokencount.txt'
 
@@ -91,6 +92,7 @@ if __name__ == '__main__':
         ATDetect=config.getboolean('general','ATDetect')
         tab_times=config.getint('general','tab_times')
         userName=config.get('general','name', '')
+        sleep2=config.getint('general','sleep',0)
 
         print(f"{Fore.YELLOW}QQPilot {config.get('general','version')}{Fore.RESET}",end='\t')
         print(f"{Fore.CYAN}{platform.platform()}{Fore.RESET}")
@@ -214,6 +216,9 @@ if __name__ == '__main__':
                 # image.screenshot(*uploadImagePossibleActualSize)
 
                 break
+            
+            for _ in tqdm.trange(0,sleep2,desc="等待"):
+                time.sleep(1)
         def CleanInputSection():
             HotKey('ctrl','a')
             time.sleep(0.2)
