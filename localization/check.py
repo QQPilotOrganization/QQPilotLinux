@@ -34,7 +34,7 @@ SKIP_PARTS = {
 
 _HAN = re.compile(r"[\u4e00-\u9fff]")
 _JS_CALL = re.compile(r"\b[Tt]\(\s*\"([^\"]+)\"\s*[,)]")
-_HTML_ATTR = re.compile(r"data-i18n(?:-aria-label)?=\"([^\"]+)\"")
+_HTML_ATTR = re.compile(r"data-i18n(?:-aria-label|-title)?=\"([^\"]+)\"")
 _JS_BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 # 只去掉整行注释；行内 // 可能是字符串里的 URL（如 http://...），不能一概剥掉
 _JS_LINE_COMMENT = re.compile(r"^[ \t]*//.*$", re.MULTILINE)

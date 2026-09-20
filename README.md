@@ -1,26 +1,19 @@
 
-```plain text
-   ____     ____    _____    _   _           _   
-  / __ \   / __ \  |  __ \  (_) | |         | |  
- | |  | | | |  | | | |__) |  _  | |   ___   | |_ 
- | |  | | | |  | | |  ___/  | | | |  / _ \  | __|
- | |__| | | |__| | | |      | | | | | (_) | | |_ 
-  \___\_\  \___\_\ |_|      |_| |_|  \___/   \__|
-                                        
-```
-# QQPilotLinux - 基于窗口自动化的 QQ 自动回复机器人
-
-[Windows版本](https://github.com/QQPilotOrganization/QQPilot)
-[Android](https://github.com/QQPilotOrganization/QQPilotPocketEdition)
-
-<!-- [![示例截图](./QQPilot.jpeg)](./QQPilot.jpeg) -->
 <div align="center">
+<img alt="示例截图" src="./assets/FishCake.png" width="120" >
+ <h1> FishCakeQQ</h1>
 
-<img alt="示例截图" src="./assets/qqpilot.png" width="300" >
-</div>
+<h6>使用纯视觉 + 窗口自动化实现 QQ 消息自动回复，<b>零 API 依赖、零注入、低封号风险。</b>
+</h6>
 
-> 使用纯视觉 + 窗口自动化实现 QQ 消息自动回复，**零 API 依赖、零注入、低封号风险**。 
 
+</div> 
+
+[文档](document/main.md) |
+[Windows版本](https://github.com/QQPilotOrganization/QQPilot) | 
+[Android版本](https://github.com/QQPilotOrganization/QQPilotPocketEdition)
+
+<!-- 
 ## 1.5.15
 
 对于强制使用Ollama API，填写类似https://example.com 即可，会自动定向到 https://example.com/api/chat。
@@ -35,7 +28,7 @@
 
 ##  项目简介
 
-QQPilot 是一个全自动的 QQ 聊天机器人，通过以下流程实现智能回复：
+FishCakeQQ 是一个全自动的 QQ 聊天机器人，通过以下流程实现智能回复：
 
 > **复制聊天内容 → 解析消息（含图片/表情包）→ 调用 LLM 生成回复 → 模拟输入并发送**
 
@@ -72,7 +65,7 @@ QQPilot 是一个全自动的 QQ 聊天机器人，通过以下流程实现智�
 | 联系人面板宽度     | 拖动至 **最窄**            |
 |主题|**浅色主题**|
 
-> 🔍 QQPilot 通过 UI 坐标识别消息，任何界面变动（如缩放、深色主题）都可能导致识别失败。
+> 🔍 FishCakeQQ 通过 UI 坐标识别消息，任何界面变动（如缩放、深色主题）都可能导致识别失败。
 ---
 
 ### 2. 安装 `uv`（Python 包 & 版本管理工具）
@@ -97,7 +90,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # 设置国内镜像加速 Python 二进制下载
 export UV_PYTHON_INSTALL_MIRROR=https://mirror.nju.edu.cn/github-release/indygreg/python-build-standalone
 
-# 安装 Python 3.14（QQPilot 推荐版本）
+# 安装 Python 3.14（FishCakeQQ 推荐版本）
 uv python install 3.14
 
 # 验证安装
@@ -106,13 +99,13 @@ uv python list
 
 ---
 
-## 🛠️ 安装 QQPilot
+## 🛠️ 安装 FishCakeQQ
 
-### 4. 下载QQPilot
+### 4. 下载FishCakeQQ
 
 ```bash
-git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
-cd QQPilotLinux
+git clone https://github.com/FishCakeQQOrganization/FishCakeQQLinux.git
+cd FishCakeQQLinux
 ```
 
 ---
@@ -136,7 +129,7 @@ uv sync -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 ### 7. 安装系统依赖
 
-QQPilot 依赖以下系统组件：
+FishCakeQQ 依赖以下系统组件：
 
 ```bash
 # 用于 pyperclip（剪贴板操作）
@@ -153,7 +146,7 @@ sudo apt install python3-tk python3-xlib
 
 ---
 
-## ▶️ 运行 QQPilot
+## ▶️ 运行 FishCakeQQ
 
 项目提供三个核心脚本：
 
@@ -165,29 +158,9 @@ sudo apt install python3-tk python3-xlib
 | `run.sh` | 启动主程序 |
 
 ```bash
-./option.sh    # 首次运行建议先配置
+./menu.sh    # 首次运行建议先配置
 ./run.sh       # 启动机器人
 ```
-#### 各配置项用法
-
-
-| 设置项             | 解释                     |
-|--------------------|---------------------------|
-| 用户名         | 判断是否是自身的消息。填写机器人账号的昵称。建议在群聊中不要修改昵称，否则会导致LLM无法正确识别到@命令        |
-| 窗口宽度和高度     | 程序启动后会移动QQ到最左上角并调至该大小            |
-|Token用量    | 基于API的参数计算            |
-|解析图片    | 只会将选定的图片数量传给API            |
-|模型名称    | 填写使用的模型          |
-|视觉模型    | 选定的模型是否是视觉模型，如果不是，则不会传任何图片给API          |
-|API Key|填写LLM 提供商的API Key，如果是Ollama，可以填写随机值|
-|服务器|支持直接使用Ollama(http://localhost:11434/api/chat),内置模型（Jaccard）、OneBot 直连和填写URL。填写类似https://example.com/v1 定向到 https://example.com/v1/chat/completions/，若开启 **强制使用Ollama API** ，填写类似https://example.com 即可，会自动定向到 https://example.com/api/chat。选择 **OneBot** 时，QQPilot 直接用 OneBot v11 协议连接机器人后端（如 MaiBot），此时 `websocket_server` / `account_id` / `reverse` 生效，API Key 作为其 authorization|
-|框选消息时长|选择消息的长度随时长的增加而增加|
-|请求的额外参数|API请求的额外参数，`{"think":false}`可以让Ollama API 的模型不思考 |
-|自动点击登录|启动后自动寻找登录按钮并点击（建议使用QQ的自动登录） |
-|持续将窗口置于最前|将QQ窗口置于最前防止遮挡|
-|远程服务器超时|在时间到后关闭连接，对于性能较差的计算机，使用本地模型时建议保持`300`|
-|tab按下次数|模板匹配失败后才需要用到，如果点到了删除按钮，请降低|
-|提示文本|System Prompt|
 
 ---
 
@@ -237,7 +210,7 @@ ollama pull huihui_ai/deepseek-r1-abliterated:8b
 
 ## 🎉 完成！
 
-现在你可以让 QQPilot在Linux下自动监听 QQ 消息、调用大模型生成回复，并自动发送！
+现在你可以让 FishCakeQQ在Linux下自动监听 QQ 消息、调用大模型生成回复，并自动发送！
 
 🌟 **小贴士**：  
 - 确保 QQ 窗口处于 **前台且未最小化**。   
@@ -295,7 +268,7 @@ uv run python -m localization.check   # 缺失/未使用/硬编码 三项体检
 
 ## 🙌 贡献与反馈
 
-- 🐞 发现 Bug？ → 提交 [Issue](https://github.com/QQPilotOrganization/QQPilotLinux/issues)  
+- 🐞 发现 Bug？ → 提交 [Issue](https://github.com/FishCakeQQOrganization/FishCakeQQLinux/issues)  
 - 💡 想改进功能？ → 提交 Pull Request  
 - 🌍 有新语言/模型建议？ → 欢迎讨论！
 
@@ -310,4 +283,4 @@ uv run python -m localization.check   # 缺失/未使用/硬编码 三项体检
 
 
 
-
+ -->
