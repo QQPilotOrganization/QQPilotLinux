@@ -16,8 +16,8 @@ import json
 import os
 import platform
 import shutil
+import signal
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Optional
 
@@ -83,10 +83,6 @@ def _as_bool(value: Any, default: bool = False) -> bool:
     if value is None:
         return default
     return str(value).strip().lower() in ("1", "true", "yes", "on")
-
-
-def _is_linux() -> bool:
-    return platform.system() == "Linux"
 
 
 # ---------------------------------------------------------------------------
@@ -361,17 +357,15 @@ class Api:
         return {"ok": True, "path": str(path)}
 
     def open_path(self, path: str = "") -> dict:
+        """用文件管理器打开目录（Linux：xdg-open）。"""
         target = self._resolve(path or ".")
         if target is None or not target.exists():
             return {"ok": False, "error": "路径不存在"}
         try:
-            if _is_linux():
-                subprocess.Popen(["xdg-open", str(target)])
-            elif platform.system() == "Darwin":
-                subprocess.Popen(["open", str(target)])
-            else:
-                os.startfile(str(target))  # type: ignore[attr-defined]
+            subprocess.Popen(["xdg-open", str(target)])
             return {"ok": True}
+        except FileNotFoundError:
+            return {"ok": False, "error": "找不到 xdg-open，请手动打开该目录"}
         except Exception as exc:  # noqa: BLE001
             return {"ok": False, "error": str(exc)}
 
@@ -516,11 +510,7 @@ class Api:
         if self.is_running():
             return {"ok": True, "message": "QQPilot 已在运行", "running": True}
         try:
-            if _is_linux():
-                cmd = ["bash", "./run.sh"]
-            else:
-                cmd = [sys.executable, "ScreenshotToUILayout.py"]
-            self._proc = subprocess.Popen(cmd, cwd=str(ROOT))
+            self._proc = subprocess.Popen(["bash", "./run.sh"], cwd=str(ROOT))
         except Exception as exc:  # noqa: BLE001
             return {"ok": False, "message": f"启动失败：{exc}", "running": False}
         return {"ok": True, "message": "已启动 QQPilot", "running": True}
@@ -530,7 +520,11 @@ class Api:
             return {"ok": True, "message": "QQPilot 未在运行", "running": False}
         assert self._proc is not None
         try:
-            self._proc.terminate()
+            while self._proc is not None:
+                self._proc.kill()
+                self._proc.terminate()
+                self._proc.send_signal(signal.SIGKILL)
+                raise Exception("在终端按下Ctrl+C退出")
         except Exception as exc:  # noqa: BLE001
             return {"ok": False, "message": f"停止失败：{exc}", "running": True}
         return {"ok": True, "message": "已请求停止", "running": False}
@@ -559,15 +553,6 @@ class Api:
 
 def run_ui(page: str = "launch", json_target: str = "") -> None:
     """启动统一界面（必须在主线程调用）。"""
-    if platform.system() == "Windows":
-        # 让 WebView2 跟随系统缩放，避免高分屏下界面发虚
-        try:
-            import ctypes
-
-            ctypes.windll.shcore.SetProcessDpiAwareness(1)
-        except Exception:  # noqa: BLE001
-            pass
-
     api = Api(page=page, json_target=json_target)
     window = webview.create_window(
         "QQPilot",
@@ -582,12 +567,10 @@ def run_ui(page: str = "launch", json_target: str = "") -> None:
     try:
         webview.start()
     except Exception as exc:  # noqa: BLE001
-        hint = ""
-        if platform.system() == "Linux":
-            hint = (
-                "\nLinux 还需要一个 WebView 后端（任选其一）：\n"
-                "  uv pip install \"pywebview[qt]\"        # 纯 pip，最简单\n"
-                "  sudo apt install gir1.2-webkit2-4.1 python3-gi && "
-                "uv pip install \"pywebview[gtk]\"\n"
-            )
+        hint = (
+            "\nWebView 后端可能没装好：\n"
+            "  uv sync                     # 安装 pyproject 里的 pywebview[qt]\n"
+            "  # 若 Qt 仍起不来，补系统库：\n"
+            "  sudo apt install libnss3 libxkbcommon-x11-0 libxcb-cursor0\n"
+        )
         raise SystemExit(f"无法启动 Web 界面：{exc}{hint}") from exc

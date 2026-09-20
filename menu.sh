@@ -1,1 +1,0 @@
-./PythonPath.sh ./webui/app.py

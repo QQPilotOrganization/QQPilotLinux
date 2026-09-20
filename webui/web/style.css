@@ -93,7 +93,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 0 6px;
 }
 
-.brand-reticle {
+/* .brand-reticle {
   position: relative;
   width: 26px;
   height: 26px;
@@ -117,7 +117,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   height: 6px;
   border-radius: 50%;
   background: var(--accent);
-}
+} */
 
 .brand-text { display: flex; flex-direction: column; line-height: 1.15; }
 .brand-text strong {
