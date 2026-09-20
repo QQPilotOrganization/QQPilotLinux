@@ -5,7 +5,35 @@
    =========================================================================== */
 (() => {
   "use strict";
+  function browserInfo() {
 
+    var userAgent = navigator.userAgent;
+    var browserName, fullVersion;
+    if ((userAgent.indexOf("Chrome") !== -1) && (userAgent.indexOf("Edge") === -1)) {
+      browserName = "Chrome";
+      fullVersion = userAgent.substring(userAgent.indexOf("Chrome") + 7);
+      fullVersion = fullVersion.substring(0, fullVersion.indexOf(" "));
+    } else if (userAgent.indexOf("Safari") !== -1) {
+      browserName = "Safari(?)";
+      fullVersion = userAgent.substring(userAgent.indexOf("Version") + 8);
+      fullVersion = fullVersion.substring(0, fullVersion.indexOf(" "));
+    } else if (userAgent.indexOf("Firefox") !== -1) {
+      browserName = "Firefox";
+      fullVersion = userAgent.substring(userAgent.indexOf("Firefox") + 8);
+    } else if (userAgent.indexOf("MSIE") !== -1) {
+      browserName = "Internet Explorer(?)";
+      fullVersion = userAgent.substring(userAgent.indexOf("MSIE") + 5);
+      fullVersion = fullVersion.substring(0, fullVersion.indexOf(";"));
+    } else if (userAgent.indexOf("Edge") !== -1) {
+      browserName = "Edge(?)";
+      fullVersion = userAgent.substring(userAgent.indexOf("Edge") + 5);
+    }
+
+
+    return browserName + " " + fullVersion;
+
+
+  }
   // ---------------------------------------------------------------- state
   const state = {
     app: {},
@@ -26,7 +54,7 @@
         text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
       }
     }
-    return text.replace('PROGRAM_NAME',state.translations['program.name']);
+    return text.replace('PROGRAM_NAME', state.translations['program.name']);
   }
 
   /** 给带 data-i18n / data-i18n-aria-label 的静态节点填入当前语言文本。 */
@@ -146,7 +174,6 @@
       )
     );
   }
-
   // ------------------------------------------------------------- pilot/rail
   function setPilot(app) {
     state.app = app || {};
@@ -157,6 +184,7 @@
     const bits = [];
     if (state.app.version) bits.push(`v${state.app.version}`);
     if (state.app.platform) bits.push(state.app.platform);
+    
     $("#pilotMeta").textContent = bits.join(" · ") || "—";
     if (state.app.title) document.title = state.app.title;
     const sub = $("#brandSub");
@@ -374,7 +402,7 @@
         startBtn.disabled = running;
         stopBtn.disabled = !running;
         stats.replaceChildren(
-          el("dl", { class: "stat" }, el("dt", { text: T("ui.launch.stat_version") }), el("dd", { text: state.app.version ? `v${state.app.version} · ${state.app.platform}` : "—" })),
+          el("dl", { class: "stat" }, el("dt", { text: T("ui.launch.stat_version") }), el("dd", { text: (state.app.version ? `v${state.app.version} · ${state.app.platform}` : "—")+` · ${browserInfo()}` })),
           el("dl", { class: "stat" }, el("dt", { text: T("ui.launch.stat_tokens") }), el("dd", { text: String(state.app.tokens ?? 0) })),
           el("dl", { class: "stat" }, el("dt", { text: T("ui.launch.stat_root") }), el("dd", { text: state.app.root || "—" }))
         );
@@ -441,6 +469,8 @@
       gRun.append(...row(T("ui.settings.autofocusing"), switchControl(cfg.autofocusing), T("ui.settings.autofocusing_hint")));
       gRun.append(...row(T("ui.settings.withimage"), switchControl(cfg.withimage), T("ui.settings.withimage_hint")));
       gRun.append(...row(T("ui.settings.atdetect"), switchControl(cfg.atdetect), T("ui.settings.atdetect_hint")));
+      gRun.append(...row(T("ui.settings.sleep"), need(textInput(cfg.sleep, { inputmode: "numeric" }), "sleep"), T("ui.settings.sleep_hint")));
+
       sRun.append(gRun);
 
       // 模型与服务器
@@ -529,6 +559,7 @@
 
       function collect() {
         const on = (key) => !!(refs[key] && refs[key].input && refs[key].input.checked);
+        // alert( refs.sleep.value.trim())
         return {
           name: refs.name.value.trim(),
           width: refs.width.value.trim(),
@@ -552,6 +583,7 @@
           websocket_server: refs.websocket_server.value.trim(),
           account_id: refs.account_id.value.trim(),
           reverse: on("reverse"),
+          sleep: refs.sleep.value.trim()
         };
       }
 
@@ -602,29 +634,29 @@
         list.replaceChildren(
           ...(items.length
             ? items.map((item) =>
+              el(
+                "div",
+                { class: "list-item" + (item.enabled ? "" : " is-off") },
                 el(
                   "div",
-                  { class: "list-item" + (item.enabled ? "" : " is-off") },
-                  el(
-                    "div",
-                    { class: "grow" },
-                    el("div", { class: "name", text: item.name }),
-                    el("div", { class: "desc", text: item.description })
-                  ),
-                  el("span", { class: "tag " + (item.enabled ? "on" : "off"), text: item.enabled ? T("ui.ext.status_enabled") : T("ui.ext.status_disabled") }),
-                  el("button", {
-                    class: "btn btn-sm",
-                    type: "button",
-                    text: item.enabled ? T("ui.ext.btn_disable") : T("ui.ext.btn_enable"),
-                    onclick: async (event) => {
-                      event.target.disabled = true;
-                      const result = await call("set_extension", item.name, !item.enabled);
-                      toast(result.message, result.ok ? "ok" : "bad");
-                      await refresh();
-                    },
-                  })
-                )
+                  { class: "grow" },
+                  el("div", { class: "name", text: item.name }),
+                  el("div", { class: "desc", text: item.description })
+                ),
+                el("span", { class: "tag " + (item.enabled ? "on" : "off"), text: item.enabled ? T("ui.ext.status_enabled") : T("ui.ext.status_disabled") }),
+                el("button", {
+                  class: "btn btn-sm",
+                  type: "button",
+                  text: item.enabled ? T("ui.ext.btn_disable") : T("ui.ext.btn_enable"),
+                  onclick: async (event) => {
+                    event.target.disabled = true;
+                    const result = await call("set_extension", item.name, !item.enabled);
+                    toast(result.message, result.ok ? "ok" : "bad");
+                    await refresh();
+                  },
+                })
               )
+            )
             : [el("div", { class: "list-item" }, el("div", { class: "grow" }, el("div", { class: "name", text: T("ui.ext.empty") }), el("div", { class: "desc", text: T("ui.ext.empty_hint") })))])
         );
         status.textContent = items.length ? T("ui.ext.count", { count: items.length }) : T("ui.ext.dir_empty");
@@ -888,4 +920,54 @@
   }
 
   document.addEventListener("DOMContentLoaded", start);
+  document.querySelector('#logo').onclick = () => { alert(`
+### 角色代号：鱼板（FishCake）
+**一句话概括**：一位顶着鱼板花纹、浑身散发着棉花糖甜香的梦境糖果师。虽然名字听起来很好吃，但谁敢真把她当成食材下锅，就会立刻被她拉入噩梦的“逻辑死循环”。
+
+---
+
+### 🌟 详尽外观描述（外貌特征）
+
+**1. 整体体型与气质：**
+身高155cm的少女，体型娇小轻盈，带有一种柔软、蓬松的“棉花糖”质感。主色调为纯白与浅蓝，点缀着亮眼的粉色，呈现出梦幻、轻盈且略带复古感的童话气质。
+
+**2. 头部与面部：**
+*   **发型**：一头如同云朵般蓬松的银白色及肩短发，发梢呈现原图特有的不规则锯齿状（星形）边缘，质感像极了切成细丝的包菜叶。左侧别着她最珍视的**粉色螺旋鱼板发夹**（带有灰白星形底托）。
+*   **眼睛**：瞳孔是清澈的粉色，且自带层层叠叠的螺旋纹路。当她专注或想要催眠别人时，瞳孔的螺旋会缓慢转动，像极了火锅里刚浮上来的鸣门卷。平时总是带着一抹甜美、慵懒又略带狡黠的微笑。
+
+**3. 服饰设计：**
+*   **主裙**：多层叠搭的白色蓬蓬裙，裙摆边缘是硬挺的锯齿状（完美复刻包菜外形），勾勒着浅灰色滚边。
+*   **细节**：裙摆内侧是浅蓝色内衬。胸口正中印着一个巨大的粉色螺旋徽章——这是她名为“FishCake”的专属魔法印记。
+*   **鞋子**：浅灰色圆头小皮鞋，系着粉色螺旋状的鞋带。
+
+**4. 配件与随身物品：**
+背着一个星形白色小挎包，里面装满各种粉色的“螺旋糖果”。左手常拿一根巨大的螺旋纹波板糖——**这不仅是她的零食和法杖，也是她用来敲打“不听话食材”的武器**。
+
+---
+
+### 🎭 性格特点（内在设定）
+
+**1. 【糖衣炮弹】的温和与迷幻**
+声音软糯甜美，像个行走的棉花糖。她乐于倾听别人的烦恼，并递上一颗特制的“螺旋糖果”。任何吃掉糖果的人，都会被她的螺旋瞳孔催眠，不知不觉吐露内心的秘密。
+
+**2. 极致的迷糊与“逻辑死循环”**
+思维方式和她的名字一样是个“螺旋”。常常为了找一颗糖果翻遍整个房间，最后发现糖果一直含在嘴里。出门送甜品经常迷路，但总能误打误撞走到目的地，她坚信这是“FishCake的绝对幸运”。
+
+**3. 慵懒的“节能主义者”**
+能躺着绝不坐着，能指使别人绝不动手。口头禅是：“哎呀，让我歇会儿，FishCake的脑细胞要是转成螺旋了可是会晕的。”
+
+**4. 隐藏的“腹黑”与绝对底线**
+看起来像一团没脾气的云，但**极度讨厌别人拿她的名字开玩笑说“看起来很好吃”或者“想下锅”**。如果有人踩了这个雷，或者弄坏了她的甜点，她会瞬间黑化，微笑着用波板糖敲击对方：“看来，你需要被抹除记忆，重新回炉造一下呢。”
+
+**5. 收集癖**
+极度喜欢收集带有“螺旋”或“星形”纹路的东西。她的房间里堆满了各种奇奇怪怪的螺旋状杂物。
+
+---
+
+**🎤 经典台词：**
+*“Hi，我是 FishCake（鱼板）。要来一颗糖吗？只要转三个圈，烦恼就会跟着融化掉哦～”*
+*“我的名字叫鱼板，但我可不是用来下锅的哦。如果非要试试……那你的今晚的梦里可能只有无尽的白菜帮子了。”*
+*“脑子里的线缠住了……算了，FishCake今天也是适合睡觉的一天呢。”*
+    `) } 
 })();
+

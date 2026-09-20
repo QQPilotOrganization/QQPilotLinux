@@ -231,6 +231,7 @@ class Api:
             "account_id": _value(parser, "account_id"),
             "reverse": _as_bool(_value(parser, "reverse")),
             "tokens": _read_tokens(),
+            'sleep':_value(parser,'sleep')
         }
 
     def save_config(self, payload: dict) -> dict:
@@ -250,6 +251,7 @@ class Api:
         require_number("maximagecount", _t("ui.settings.maximage"))
         require_number("scroll", _t("ui.settings.scroll"))
         require_number("remote_server_timeout", _t("ui.settings.remote_timeout"))
+        require_number("sleep", _t("ui.settings.sleep"))
 
         try:
             possibility = int(payload.get("sendimagepossibility", 0))
@@ -299,6 +301,7 @@ class Api:
         put("websocket_server", str(payload.get("websocket_server", "")).strip())
         put("account_id", str(payload.get("account_id", "")).strip())
         put("reverse", bool(payload.get("reverse")))
+        put("sleep", payload.get("sleep"))
 
         if server_mode == "custom":
             put("server_url", custom_url or "custom")

@@ -173,7 +173,7 @@ sudo apt install python3-tk python3-xlib
 
 | 设置项             | 解释                     |
 |--------------------|---------------------------|
-| 用户名         | 判断是否是自身的消息。填写机器人账号的昵称。建议在群聊中，不要修改昵称，否则会导致LLM无法正确识别到@命令        |
+| 用户名         | 判断是否是自身的消息。填写机器人账号的昵称。建议在群聊中不要修改昵称，否则会导致LLM无法正确识别到@命令        |
 | 窗口宽度和高度     | 程序启动后会移动QQ到最左上角并调至该大小            |
 |Token用量    | 基于API的参数计算            |
 |解析图片    | 只会将选定的图片数量传给API            |
@@ -198,17 +198,10 @@ sudo apt install python3-tk python3-xlib
 | 页面 | 原来的入口 | 现在 |
 |------|-----------|------|
 | 启动台 | `menu.sh` | 启动/停止主程序，查看版本与 Token 用量 |
-| 运行设置 | `option.sh` | 全部 config.ini 选项，含 OneBot 直连参数 |
-| 扩展管理 | `ExtensionViewer.sh` | 启用/停用 `Extensions/` 下的扩展 |
-| 升级助手 | `LUpgrade.sh` | 复制到目标目录并保留个人配置 |
-| 图片导入 | `ImageImport.sh` | 批量复制图片到 `Images/` |
-| 额外参数 | `jsonEdit.py` | 编辑 `extra.json` |
 
-`menu.sh`、`option.sh`、`ExtensionViewer.sh`、`LUpgrade.sh`、`ImageImport.sh` 都打开同一个窗口，
-只是默认停在不同页面；界面源码在 `webui/`（`webui/app.py` 是 Python↔JS 桥，`webui/web/` 是前端）。
 
 > Linux 上 pywebview 需要额外的 WebView 后端，任选其一：
-> `uv pip install "pywebview[qt]"`（纯 pip，推荐），或安装 GTK 后端
+> `uv pip install "pywebview[qt]"`（纯 pip，推荐，安装指令已经包含），或安装 GTK 后端
 > `sudo apt install gir1.2-webkit2-4.1 python3-gi` 后再 `uv pip install "pywebview[gtk]"`。
 
 ---
