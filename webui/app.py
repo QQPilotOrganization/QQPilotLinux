@@ -22,12 +22,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 import webview
+from localization import t as _t, get_all as _get_all, current_language as _current_lang
 
 # ---------------------------------------------------------------------------
 # 路径与常量
 # ---------------------------------------------------------------------------
 WEBUI_DIR = Path(__file__).resolve().parent
-ROOT = WEBUI_DIR.parent  # QQPilotLinux 根目录
+ROOT = WEBUI_DIR.parent  #  根目录
 WEB_DIR = WEBUI_DIR / "web"
 
 CONFIG_FILE = ROOT / "config.ini"
@@ -138,9 +139,9 @@ def _extract_description(path: Path) -> str:
                     if isinstance(target, ast.Name) and target.id == "description":
                         if isinstance(node.value, ast.Constant):
                             return str(node.value.value).replace("\n", " ")
-        return "无描述"
+        return _t("ui.ext.no_desc")
     except Exception as exc:  # noqa: BLE001
-        return f"解析错误：{exc}"
+        return _t("ui.ext.parse_error") + str(exc)
 
 
 # ---------------------------------------------------------------------------
@@ -179,12 +180,18 @@ class Api:
             "page": self.page,
             "jsonTarget": self.json_target,
             "app": self.app_info(),
+            "translations": _get_all(),
+            "language": _current_lang(),
         }
+
+    def get_translations(self) -> dict:
+        """返回当前语言的全部翻译键值对，供前端使用。"""
+        return _get_all()
 
     def app_info(self) -> dict:
         parser = _read_config()
         return {
-            "title": "QQPilot",
+            "title": _t("program.name"),
             "version": _value(parser, "version"),
             "platform": platform.system(),
             "root": str(ROOT),
@@ -236,35 +243,35 @@ class Api:
             try:
                 float(raw)
             except (TypeError, ValueError):
-                fields[key] = f"{label}需要是数字"
+                fields[key] = _t("config.number_error", label=label)
 
-        require_number("width", "窗口宽度")
-        require_number("height", "窗口高度")
-        require_number("maximagecount", "解析图片数")
-        require_number("scroll", "框选消息时长")
-        require_number("remote_server_timeout", "远程服务器超时")
+        require_number("width", _t("ui.settings.width"))
+        require_number("height", _t("ui.settings.height"))
+        require_number("maximagecount", _t("ui.settings.maximage"))
+        require_number("scroll", _t("ui.settings.scroll"))
+        require_number("remote_server_timeout", _t("ui.settings.remote_timeout"))
 
         try:
             possibility = int(payload.get("sendimagepossibility", 0))
             if not 0 <= possibility <= 100:
                 raise ValueError
         except (TypeError, ValueError):
-            fields["sendimagepossibility"] = "发送图片概率需要在 0–100 之间"
+            fields["sendimagepossibility"] = _t("config.possibility_error")
 
         server_mode = str(payload.get("server_mode", "")).lower()
         custom_url = str(payload.get("custom_server_url", "")).strip()
         if server_mode == "custom" and not custom_url:
-            fields["custom_server_url"] = "请填写服务器地址"
+            fields["custom_server_url"] = _t("config.custom_url_error")
         if server_mode == "onebot":
             if not str(payload.get("websocket_server", "")).strip():
-                fields["websocket_server"] = "请填写 OneBot WebSocket 地址"
+                fields["websocket_server"] = _t("config.onebot_ws_error")
 
         tab_times = str(payload.get("tab_times", "8")).strip()
         if tab_times not in ("7", "8"):
-            fields["tab_times"] = "只能是 7 或 8"
+            fields["tab_times"] = _t("config.tab_times_error")
 
         if fields:
-            return {"ok": False, "fields": fields, "message": "有字段需要修正"}
+            return {"ok": False, "fields": fields, "message": _t("config.validation_error")}
 
         parser = _read_config()
         general = parser["general"]
@@ -302,19 +309,19 @@ class Api:
             with open(CONFIG_FILE, "w", encoding="utf-8") as handle:
                 parser.write(handle)
         except Exception as exc:  # noqa: BLE001
-            return {"ok": False, "fields": {}, "message": f"写入失败：{exc}"}
+            return {"ok": False, "fields": {}, "message": f"{_t('config.save_failed')}：{exc}"}
 
-        return {"ok": True, "fields": {}, "message": "设置已保存"}
+        return {"ok": True, "fields": {}, "message": _t("config.saved")}
 
     def reset_tokens(self) -> dict:
         _write_tokens(0)
-        return {"ok": True, "tokens": 0, "message": "计数器已归零"}
+        return {"ok": True, "tokens": 0, "message": _t("tokens.reset")}
 
     # -- 额外参数（JSON） ---------------------------------------------------
     def read_json(self, path: str = "") -> dict:
         target = self._resolve(path or self.json_target or "extra.json")
         if target is None:
-            return {"ok": False, "error": "路径无效"}
+            return {"ok": False, "error": _t("json.path_invalid")}
         if not target.exists():
             return {"ok": True, "path": str(target), "text": "{\n    \n}\n", "exists": False}
         try:
@@ -326,23 +333,23 @@ class Api:
         payload = payload or {}
         target = self._resolve(payload.get("path", "") or self.json_target or "extra.json")
         if target is None:
-            return {"ok": False, "message": "路径无效"}
+            return {"ok": False, "message": _t("json.path_invalid")}
         text = str(payload.get("text", ""))
         try:
             json.loads(text or "{}")
         except json.JSONDecodeError as exc:
-            return {"ok": False, "message": f"JSON 解析失败：第 {exc.lineno} 行 {exc.msg}"}
+            return {"ok": False, "message": _t("json.parse_error_at", line=exc.lineno, msg=exc.msg)}
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(text, encoding="utf-8")
         except Exception as exc:  # noqa: BLE001
-            return {"ok": False, "message": f"写入失败：{exc}"}
-        return {"ok": True, "path": str(target), "message": f"已保存 {target.name}"}
+            return {"ok": False, "message": f"{_t('json.write_failed')}：{exc}"}
+        return {"ok": True, "path": str(target), "message": f"{_t('json.saved')} {target.name}"}
 
     # -- 文件与目录 ---------------------------------------------------------
-    def pick_folder(self, title: str = "选择文件夹") -> dict:
+    def pick_folder(self, title: str = "") -> dict:
         if self._window is None:
-            return {"ok": False, "error": "窗口未就绪"}
+            return {"ok": False, "error": _t("json.window_not_ready")}
         try:
             result = self._window.create_file_dialog(
                 webview.FOLDER_DIALOG, directory=str(ROOT)
@@ -360,12 +367,12 @@ class Api:
         """用文件管理器打开目录（Linux：xdg-open）。"""
         target = self._resolve(path or ".")
         if target is None or not target.exists():
-            return {"ok": False, "error": "路径不存在"}
+            return {"ok": False, "error": _t("folder.open_failed")}
         try:
             subprocess.Popen(["xdg-open", str(target)])
             return {"ok": True}
         except FileNotFoundError:
-            return {"ok": False, "error": "找不到 xdg-open，请手动打开该目录"}
+            return {"ok": False, "error": _t("folder.not_found")}
         except Exception as exc:  # noqa: BLE001
             return {"ok": False, "error": str(exc)}
 
@@ -384,7 +391,7 @@ class Api:
         for path in sorted(EXTENSIONS_DIR.glob("*.disabled")):
             items.append({
                 "name": path.name[: -len(".disabled")],
-                "description": "该扩展当前被禁用",
+                "description": _t("ui.ext.status_disabled"),
                 "enabled": False,
             })
         items.sort(key=lambda item: (not item["enabled"], item["name"].lower()))
@@ -393,24 +400,24 @@ class Api:
     def set_extension(self, name: str, enabled: bool) -> dict:
         name = str(name or "").strip()
         if not name or "/" in name or "\\" in name or ".." in name:
-            return {"ok": False, "message": "扩展名无效"}
+            return {"ok": False, "message": _t("ext.name_invalid")}
         enabled_path = EXTENSIONS_DIR / f"{name}.py"
         disabled_path = EXTENSIONS_DIR / f"{name}.disabled"
         try:
             if enabled and disabled_path.exists():
                 if enabled_path.exists():
-                    return {"ok": False, "message": f"{name} 已存在启用的同名扩展"}
+                    return {"ok": False, "message": f"{name} {_t('ext.already_enabled')}"}
                 disabled_path.rename(enabled_path)
-                message = f"已启用 {name}"
+                message = f"{_t('ext.enabled')} {name}"
             elif not enabled and enabled_path.exists():
                 if disabled_path.exists():
-                    return {"ok": False, "message": f"{name} 已存在禁用的同名扩展"}
+                    return {"ok": False, "message": f"{name} {_t('ext.already_disabled')}"}
                 enabled_path.rename(disabled_path)
-                message = f"已禁用 {name}"
+                message = f"{_t('ext.disabled')} {name}"
             else:
-                return {"ok": False, "message": "扩展状态已变化，请刷新后重试"}
+                return {"ok": False, "message": _t("ext.state_changed")}
         except Exception as exc:  # noqa: BLE001
-            return {"ok": False, "message": f"操作失败：{exc}"}
+            return {"ok": False, "message": f"{_t('ext.op_failed')}：{exc}"}
         result = self.list_extensions()
         result["message"] = message
         return result
@@ -419,23 +426,23 @@ class Api:
     def start_upgrade(self, dest: str) -> dict:
         dest = str(dest or "").strip()
         if not dest:
-            return {"ok": False, "message": "请先选择目标文件夹"}
+            return {"ok": False, "message": _t("upgrade.no_dest")}
         dest_path = Path(dest).expanduser()
         if not dest_path.parent.exists():
-            return {"ok": False, "message": f"父目录不存在：{dest_path.parent}"}
+            return {"ok": False, "message": f"{_t('upgrade.parent_missing')}：{dest_path.parent}"}
         try:
-            self._emit("upgrade:log", {"text": f"开始升级 → {dest_path}"})
+            self._emit("upgrade:log", {"text": f"{_t('upgrade.started')} → {dest_path}"})
             copied = self._copy_tree_for_upgrade(ROOT, dest_path)
-            self._emit("upgrade:log", {"text": f"完成，共处理 {copied} 个文件"})
-            return {"ok": True, "message": "升级完成", "copied": copied}
+            self._emit("upgrade:log", {"text": f"{_t('upgrade.done', count=copied)}"})
+            return {"ok": True, "message": _t("upgrade.done", count=copied), "copied": copied}
         except Exception as exc:  # noqa: BLE001
-            self._emit("upgrade:log", {"text": f"升级失败：{exc}"})
-            return {"ok": False, "message": f"升级失败：{exc}"}
+            self._emit("upgrade:log", {"text": f"{_t('upgrade.failed')}：{exc}"})
+            return {"ok": False, "message": f"{_t('upgrade.failed')}：{exc}"}
 
     def _merge_config_files(self, src_ini: Path, dst_ini: Path) -> None:
         if not dst_ini.exists():
             shutil.copy2(src_ini, dst_ini)
-            self._emit("upgrade:log", {"text": f"复制 config.ini → {dst_ini}"})
+            self._emit("upgrade:log", {"text": f"{_t('upgrade.copy_config')} → {dst_ini}"})
             return
         src_config = configparser.ConfigParser(interpolation=None)
         src_config.read(src_ini, encoding="utf-8")
@@ -449,7 +456,7 @@ class Api:
                     dst_config.set(section, key, value)
         with open(dst_ini, "w", encoding="utf-8") as handle:
             dst_config.write(handle)
-        self._emit("upgrade:log", {"text": f"合并 config.ini（保留目标已有值）→ {dst_ini}"})
+        self._emit("upgrade:log", {"text": f"{_t('upgrade.merge_config')} → {dst_ini}"})
 
     def _copy_tree_for_upgrade(self, src_dir: Path, dst_dir: Path) -> int:
         dst_dir.mkdir(parents=True, exist_ok=True)
@@ -468,17 +475,17 @@ class Api:
             if name == "config.ini":
                 self._merge_config_files(src_file, dst_file)
             elif name in ("system.txt", "extra.json") and dst_file.exists():
-                self._emit("upgrade:log", {"text": f"保留用户配置 → {dst_file}"})
+                self._emit("upgrade:log", {"text": f"{_t('upgrade.keep_config')} → {dst_file}"})
             else:
                 shutil.copy2(src_file, dst_file)
-                self._emit("upgrade:log", {"text": f"复制 {rel}"})
+                self._emit("upgrade:log", {"text": f"{_t('upgrade.copy_file')} {rel}"})
         return count
 
     # -- 图片导入 -----------------------------------------------------------
     def import_images(self, source: str) -> dict:
         source = str(source or "").strip()
         if not source or not os.path.isdir(source):
-            return {"ok": False, "message": "请选择有效的源文件夹"}
+            return {"ok": False, "message": _t("images.no_source")}
         target = IMAGES_DIR
         target.mkdir(parents=True, exist_ok=True)
         files = [
@@ -487,18 +494,18 @@ class Api:
             and os.path.splitext(name)[1].lower() in IMAGE_EXTENSIONS
         ]
         if not files:
-            self._emit("images:log", {"text": "未找到任何支持的图片文件"})
-            return {"ok": True, "success": 0, "failure": 0, "message": "未找到任何支持的图片文件"}
+            self._emit("images:log", {"text": _t("images.no_images")})
+            return {"ok": True, "success": 0, "failure": 0, "message": _t("images.no_images")}
         success = failure = 0
         for name in files:
-            self._emit("images:log", {"text": f"正在复制 {name}"})
+            self._emit("images:log", {"text": f"{_t('images.copying')} {name}"})
             try:
                 shutil.copy2(os.path.join(source, name), os.path.join(target, name))
                 success += 1
             except Exception as exc:  # noqa: BLE001
                 failure += 1
-                self._emit("images:log", {"text": f"失败 {name}：{exc}"})
-        message = f"完成，成功 {success} 张，失败 {failure} 张"
+                self._emit("images:log", {"text": f"{_t('images.copy_failed')} {name}：{exc}"})
+        message = _t("images.done", success=success, failure=failure)
         self._emit("images:log", {"text": message})
         return {"ok": True, "success": success, "failure": failure, "message": message}
 
@@ -508,26 +515,26 @@ class Api:
 
     def launch(self) -> dict:
         if self.is_running():
-            return {"ok": True, "message": "QQPilot 已在运行", "running": True}
+            return {"ok": True, "message": _t("launch.already_running"), "running": True}
         try:
             self._proc = subprocess.Popen(["bash", "./run.sh"], cwd=str(ROOT))
         except Exception as exc:  # noqa: BLE001
-            return {"ok": False, "message": f"启动失败：{exc}", "running": False}
-        return {"ok": True, "message": "已启动 QQPilot", "running": True}
+            return {"ok": False, "message": f"{_t('launch.start_failed')}：{exc}", "running": False}
+        return {"ok": True, "message": _t("launch.starting"), "running": True}
 
     def stop(self) -> dict:
         if not self.is_running():
-            return {"ok": True, "message": "QQPilot 未在运行", "running": False}
+            return {"ok": True, "message": _t("launch.not_running"), "running": False}
         assert self._proc is not None
         try:
             while self._proc is not None:
                 self._proc.kill()
                 self._proc.terminate()
                 self._proc.send_signal(signal.SIGKILL)
-                raise Exception("在终端按下Ctrl+C退出")
+                raise Exception(_t("launch.stop_ctrl_c"))
         except Exception as exc:  # noqa: BLE001
-            return {"ok": False, "message": f"停止失败：{exc}", "running": True}
-        return {"ok": True, "message": "已请求停止", "running": False}
+            return {"ok": False, "message": f"{_t('launch.stop_failed')}：{exc}", "running": True}
+        return {"ok": True, "message": _t("launch.stopping"), "running": False}
 
     # -- 窗口 ---------------------------------------------------------------
     def close_window(self) -> dict:
@@ -555,7 +562,7 @@ def run_ui(page: str = "launch", json_target: str = "") -> None:
     """启动统一界面（必须在主线程调用）。"""
     api = Api(page=page, json_target=json_target)
     window = webview.create_window(
-        "QQPilot",
+        _t("program.name"),
         url=str(WEB_DIR / "index.html"),
         js_api=api,
         width=1180,
@@ -568,9 +575,9 @@ def run_ui(page: str = "launch", json_target: str = "") -> None:
         webview.start()
     except Exception as exc:  # noqa: BLE001
         hint = (
-            "\nWebView 后端可能没装好：\n"
-            "  uv sync                     # 安装 pyproject 里的 pywebview[qt]\n"
-            "  # 若 Qt 仍起不来，补系统库：\n"
+            "\n" + _t("webview.launch_hint") + "：\n"
+            "  uv sync\n"
+            "  " + _t("webview.launch_hint_syslib") + "：\n"
             "  sudo apt install libnss3 libxkbcommon-x11-0 libxcb-cursor0\n"
         )
-        raise SystemExit(f"无法启动 Web 界面：{exc}{hint}") from exc
+        raise SystemExit(f"{_t('webview.launch_failed')}：{exc}{hint}") from exc

@@ -435,7 +435,8 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
   white-space: pre-wrap;
   word-break: break-word;
 }
-.console:empty::before { content: "等待操作…"; color: #5f757e; }
+/* 文案由 JS 通过 --console-empty 注入（见 app.js / localization） */
+.console:empty::before { content: var(--console-empty, ""); color: #5f757e; }
 .console .ok { color: #7fd39b; }
 .console .bad { color: #ef8f8a; }
 

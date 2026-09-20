@@ -10,6 +10,7 @@ import requests
 import json
 import re
 from chatContent import ChatContent
+from localization import t
 
 # ================= 配置加载（对齐 Answer.cs 构造函数） =================
 config = configparser.ConfigParser()
@@ -100,10 +101,10 @@ def _concatenate_text(text_list: List[ChatContent], images: List[str]) -> List[D
     """
     messages: List[Dict[str, Any]] = []
 
-    for t in text_list:
+    for chat in text_list:
         image_b64: List[str] = []        # 纯 base64 —— Ollama 使用
         image_data_urls: List[str] = []  # data: URI —— OpenAI 兼容 API 使用
-        for img in t.imagePaths:
+        for img in chat.imagePaths:
             if img not in images:
                 continue
             b64 = _image_to_base64(img)
@@ -111,16 +112,16 @@ def _concatenate_text(text_list: List[ChatContent], images: List[str]) -> List[D
             image_b64.append(b64)
             image_data_urls.append(f'data:{mime};base64,{b64}')
 
-        has_text = bool(t.text)
-        attach_images = (not t.ownByMyself) and len(image_b64) > 0
+        has_text = bool(chat.text)
+        attach_images = (not chat.ownByMyself) and len(image_b64) > 0
 
         if not has_text and not attach_images:
             continue
 
-        text = str(t) if has_text else ''
+        text = str(chat) if has_text else ''
 
         message: Dict[str, Any] = {
-            'role': 'assistant' if t.ownByMyself else 'user',
+            'role': 'assistant' if chat.ownByMyself else 'user',
         }
 
         if useOllama:
@@ -152,12 +153,12 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
     # 内置模型（对齐 Answer.cs Builtin 分支：从后往前找第一条非空、非自己发的消息）
     if builtInLanguageModel:
         global tinylm
-        for t in reversed(text):
-            if not t.text or t.ownByMyself:
+        for chat in reversed(text):
+            if not chat.text or chat.ownByMyself:
                 continue
             if tinylm is None:
                 tinylm = importlib.import_module('TinyLangJaccard')
-            return tinylm.answer(t.text), 0
+            return tinylm.answer(chat.text), 0
         return '', 0
 
     # OneBot 直连：把消息用 OneBot v11 协议发给 OneBot 端（如 MaiBot），
@@ -178,15 +179,15 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
     # 收集图片：从后往前，跳过自己的消息，直到 MaxImageCount（对齐 C#）
     image_list: List[str] = []
     if isVisionModel:
-        for t in reversed(text):
-            if not t.ownByMyself:
-                for img in t.imagePaths:
+        for chat in reversed(text):
+            if not chat.ownByMyself:
+                for img in chat.imagePaths:
                     if os.path.exists(img):
                         image_list.append(img)
                         if len(image_list) >= maxImageCount:
                             break
                     else:
-                        print(f'× 没有找到图片 {img}')
+                        print(f'{t("answer.image_not_found")} {img}')
                 if len(image_list) >= maxImageCount:
                     break
 
@@ -246,7 +247,7 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
             prompt_tokens = usage.get('prompt_tokens', 0) or 0
             completion_tokens = usage.get('completion_tokens', 0) or 0
             total_tokens = usage.get('total_tokens', 0) or 0
-            print(f'Token 用量: 输入 {prompt_tokens} | 输出 {completion_tokens} | 总计 {total_tokens}')
+            print(t("answer.token_usage", input=prompt_tokens, output=completion_tokens, total=total_tokens))
             totalTokens = total_tokens
 
         # 推理内容（Deepseek reasoning_content / Ollama thinking，对齐 C#）
@@ -260,7 +261,7 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
             print(f'{Fore.LIGHTBLACK_EX}<think>\n{reason}\n</think>{Fore.RESET}')
 
         elapsed = time.time() - start_time
-        print(f'用时 {elapsed:.2f}s')
+        print(f'{t("answer.elapsed")} {elapsed:.2f}s')
 
         if answer_text is not None:
             answer_text = answer_text.strip()

@@ -7,6 +7,7 @@
 - Message / MessageType 对象的段级封装
 """
 import json
+from localization import t
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -259,7 +260,7 @@ class Message:
         """从单个 CQ 码构造；整串必须恰为一个 CQ 码。"""
         parsed = decode_cq(source)
         if parsed is None:
-            raise ValueError(f"不是合法的单个 CQ 码: {source!r}")
+            raise ValueError(f'{t("cc.bad_cq")}: {source!r}')
         msg_type, data = parsed
         return cls(MessageType(msg_type), data)
 

@@ -3,6 +3,7 @@ indentificationString=''
 import re
 from dataclasses import dataclass
 from typing import List
+from localization import t
 import os
 from urllib.parse import unquote
 
@@ -112,9 +113,9 @@ if __name__ == "__main__":
 
     parsed = ParseChatLog(test_log,"3454345")
     for msg in parsed:
-        print("=== 消息 ===")
+        print(t("demo.messages"))
         print(str(msg))
-        print("图片路径:", msg.imagePaths)
+        print(t("demo.image_paths") + ":", msg.imagePaths)
         print("Report:\n", msg.report())
         print()
 

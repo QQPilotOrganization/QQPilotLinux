@@ -5,9 +5,10 @@ if sysDetect.isLinux():
     import scaleToiniLinux
 import load
 import dockLog
-load.startLoading(Fore.GREEN,"正在初始化")
+from localization import t
+load.startLoading(Fore.GREEN,t("default.loading"))
 floatingTextApp=dockLog.start_floating_window()
-dockLog.setText("正在初始化-按右键关闭浮窗")
+dockLog.setText(t("default.loading.hint"))
 from typing import Any, Generator, Literal
 from random import randint
 import subprocess
@@ -57,8 +58,8 @@ import extensionLoader
 
 load.stopLoading()
 
-logger.info(f"{Fore.GREEN}初始化完成{Fore.RESET}")
-dockLog.setText("初始化完成")
+logger.info(f"{Fore.GREEN}{t('default.loading.done')}{Fore.RESET}")
+dockLog.setText(t("default.ready"))
 
 
 autoFocusShouldRun=True
@@ -69,7 +70,7 @@ def autoFocus():
         logger.debug("Focusing...")
         time.sleep(4)
 
-t=None
+auto_thread=None
 
 
 
@@ -79,9 +80,9 @@ if __name__ == '__main__':
         time.sleep(1)
         match os.environ.get('XDG_SESSION_TYPE',''):
             case 'wayland':
-                logger.warning("wayland下可能无法正常使用")
+                logger.warning(t("warning.wayland"))
             case '':
-                logger.warning("找不到显示服务器，正在运行Windows或者WSL吗？")
+                logger.warning(t("warning.no_display"))
         config=configparser.ConfigParser()
         config.read(filenames='config.ini',encoding='utf-8')
         size: tuple[int, int]=int(config.get('general','width')),int(config.get('general','height'))
@@ -98,18 +99,18 @@ if __name__ == '__main__':
         userName=config.get('general','name')
         sleep2=config.getint('general','sleep')
 
-        print(f"{Fore.YELLOW}QQPilot {config.get('general','version')}{Fore.RESET}",end='\t')
+        print(f"{Fore.YELLOW}{t('program.name')} {config.get('general','version')}{Fore.RESET}",end='\t')
         print(f"{Fore.CYAN}{platform.platform()}{Fore.RESET}")
         sendImagePossibility=int(sendImagePossibility)
 
-        logger.info(f"欢迎您,{userName}。")
-        logger.info("自动聚焦功能已开启")
-        t=threading.Thread(target=autoFocus)
-        t.start()
+        logger.info(t("program.welcome", name=userName))
+        logger.info(t("info.autofocus"))
+        auto_thread=threading.Thread(target=autoFocus)
+        auto_thread.start()
         if autoLogin:
-            logger.info("自动登录功能已开启")
-            logger.info("正在尝试登录...")
-            dockLog.setText("正在尝试登录...")
+            logger.info(t("info.autologin"))
+            logger.info(t("info.login.try"))
+            dockLog.setText(t("info.login.try"))
             for _ in range(4):
 
                 image.fullScreenShot()
@@ -122,11 +123,11 @@ if __name__ == '__main__':
             time.sleep(1)
                 
 
-        logger.warning("======================================================")
-        logger.warning("")
-        logger.warning("\t使用时请勿移动鼠标！")
-        logger.warning("")
-        logger.warning("======================================================");
+        print(Fore.YELLOW,"======================================================")
+        print("")
+        print("\t" + t("warning.never_mouse"))
+        print("")
+        print("======================================================",Fore.RESET);
 
         
         size=(int(size[0]*scale),int(size[1]*scale))
@@ -138,48 +139,48 @@ if __name__ == '__main__':
         positionRect: tuple[Literal[0], Literal[0], int, int]=(0,0,*size)
 
 
-        logger.debug(f"QQ窗口位置: {positionRect}")
+        logger.debug(f'{t("screenshot.qq_window")}: {positionRect}')
 
         chatListActualSize: tuple[int, int, int, int]=positions.toActualSize(positions.CHAT_LIST_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"聊天列表实际大小: {chatListActualSize}")
+        logger.debug(f'{t("screenshot.chat_list")}: {chatListActualSize}')
 
         conversationActualSize: tuple[int, int, int, int]=positions.toActualSize(positions.CONVERSATION_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"聊天区域实际大小: {conversationActualSize}")
+        logger.debug(f'{t("screenshot.chat_area")}: {conversationActualSize}')
 
         commentSectionActualSize: tuple[int, int, int, int]=positions.toActualSize(positions.COMMENT_SECTION_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"输入框实际大小: {commentSectionActualSize}")
+        logger.debug(f'{t("screenshot.input_box")}: {commentSectionActualSize}')
 
         sendButtonActualSize: tuple[int, int, int, int]=positions.toActualSize(positions.SEND_BUTTON_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"发送按钮实际大小: {sendButtonActualSize}")
+        logger.debug(f'{t("screenshot.send_button")}: {sendButtonActualSize}')
 
         exitConversationActualSize: tuple[int, int, int, int]=positions.toActualSize(positions.EXIT_CONVERSATION_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"退出会话按钮实际大小: {exitConversationActualSize}")
+        logger.debug(f'{t("screenshot.quit_button")}: {exitConversationActualSize}')
 
         sendImageActualSize: tuple[int, int, int, int]=positions.toActualSize(positions.SEND_IMAGE_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"发送图片按钮实际大小: {sendImageActualSize}")
+        logger.debug(f'{t("screenshot.upload_button")}: {sendImageActualSize}')
 
 
         atPlaceActualSize: tuple[int, int, int, int]=positions.toActualSize(positions.AT_PLACE_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"@位置实际大小: {atPlaceActualSize}")
+        logger.debug(f'{t("screenshot.at_position")}: {atPlaceActualSize}')
 
         startDraggingAbsolutePosition=positions.toActualPoint(positions.START_DRAGGING_RELATIVE_POSITION,size)
         endDraggingAbsolutePosition=positions.toActualPoint(positions.END_DRAGGING_RELATIVE_POSITION,size)
-        logger.debug(f"开始拖拽位置: {startDraggingAbsolutePosition}")
-        logger.debug(f"结束拖拽位置: {endDraggingAbsolutePosition}")
+        logger.debug(f'{t("screenshot.drag_start")}: {startDraggingAbsolutePosition}')
+        logger.debug(f'{t("screenshot.drag_end")}: {endDraggingAbsolutePosition}')
 
         chatButtonActualPosition=positions.toActualPoint(positions.CHAT_BUTTON_RELATIVE_POSITION,size)
-        logger.debug(f"聊天按钮实际位置: {chatButtonActualPosition}")
+        logger.debug(f'{t("screenshot.chat_button")}: {chatButtonActualPosition}')
         contactButtonActualPosition=positions.toActualPoint(positions.CONTACT_BUTTON_RELATIVE_POSITION,size)
-        logger.debug(f"联系人按钮实际位置: {contactButtonActualPosition}")
+        logger.debug(f'{t("screenshot.contact_button")}: {contactButtonActualPosition}')
 
 
         cancelButtonActualPosition=positions.toActualPoint(positions.CANCEL_BUTTON_RELATIVE_POSITION,size)
 
         uploadImagePossibleActualSize=positions.toActualSize(positions.UPLOAD_IMAGE_POSSIBLE_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"上传图片可能位置: {uploadImagePossibleActualSize}")
+        logger.debug(f'{t("screenshot.upload_maybe")}: {uploadImagePossibleActualSize}')
         totalTokens=0
         copyButtonPossibleAcutalSize=positions.toActualSize(positions.COPY_BUTTON_BBOX_RELATIVE_SIZE,size)
-        logger.debug(f"复制可能位置: {copyButtonPossibleAcutalSize}")
+        logger.debug(f'{t("screenshot.copy_maybe")}: {copyButtonPossibleAcutalSize}')
         
         if os.path.exists(TOKENCOUNTFILE):
             with open(TOKENCOUNTFILE,'r',encoding='utf8') as f:
@@ -226,7 +227,7 @@ if __name__ == '__main__':
 
                 break
             
-            for _ in tqdm.trange(0,sleep2,desc="等待"):
+            for _ in tqdm.trange(0,sleep2,desc=t("info.wait")):
                 time.sleep(1)
         def CleanInputSection():
             HotKey('ctrl','a')
@@ -240,7 +241,7 @@ if __name__ == '__main__':
             
             dirs = []
             if not os.path.exists(image_dir):
-                logger.error("没有找到图片目录")
+                logger.error(t("error.image_dir_not_found"))
             else:
                 dirs = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
             
@@ -261,7 +262,7 @@ if __name__ == '__main__':
                 
                 copy_button_position = Vision.FindTemplates("screenshot.png", "uploadImage.png", 30, 1)
                 if len(copy_button_position) <= 0:
-                    logger.warning("使用模板匹配查找上传图片按钮失败")
+                    logger.warning(t("error.template_upload_failed"))
                     try:
                         import subprocess
                         if os.name == 'nt':
@@ -286,7 +287,7 @@ if __name__ == '__main__':
                 # chatList: Image.Image=im.crop(chatListActualSize)
                 chatList=image.fullScreenShot()
 
-                dockLog.setText("等待扩展完成操作")
+                dockLog.setText(t("info.waiting_extension"))
                 extensionLoader.callEveryExtension("after_screenshot")
 
                 # del im
@@ -303,8 +304,8 @@ if __name__ == '__main__':
                     if contain==[0,0]:
                         continue 
                     
-                    dockLog.setText("🚫🖱️发现新信息  ")
-                    logger.info(f"发现红点: {contain}")
+                    dockLog.setText(t("docklog.found_new"))
+                    logger.info(t("info.found_reddot") + f": {contain}")
 
                     click(contain[0],contain[1])
                     time.sleep(2)
@@ -314,16 +315,16 @@ if __name__ == '__main__':
                     
                     dragFromTo(*startDraggingAbsolutePosition,*endDraggingAbsolutePosition)
 
-                    dockLog.setText("🚫🖱️ 请勿移动鼠标")
+                    dockLog.setText(t("docklog.no_mouse"))
                     time.sleep(.1)
                     goto(conversationActualSize[0]+((conversationActualSize[2]-conversationActualSize[0])//2),conversationActualSize[1]+((conversationActualSize[3]-conversationActualSize[1])//2))
                     image.fullScreenShot()
 
-                    t=Vision.FindTemplates('screenshot.png','copy.png',30,1)
-                    if len(t)>=1 and t[0]!=[0,0]:
-                        click(t[0][0],t[0][1])
+                    t_pts=Vision.FindTemplates('screenshot.png','copy.png',30,1)
+                    if len(t_pts)>=1 and t_pts[0]!=[0,0]:
+                        click(t_pts[0][0],t_pts[0][1])
                     else:
-                        logger.error(f"{Fore.YELLOW}使用模板匹配查找复制按钮失败{Fore.RESET}")
+                        logger.error(f"{Fore.YELLOW}{t('error.template_copy_failed')}{Fore.RESET}")
                         
                         
                     
@@ -350,8 +351,8 @@ if __name__ == '__main__':
 
                     chat=pyperclip.paste()
                     if chat=="":
-                        dockLog.setText("没有提取到消息。")
-                        logger.error("没有提取到消息。")
+                        dockLog.setText(t("docklog.no_message"))
+                        logger.error(t("docklog.no_message"))
                         GoBack()
                         continue
                         
@@ -359,14 +360,14 @@ if __name__ == '__main__':
                     
                     
 
-                    dockLog.setText("等待扩展完成操作")
+                    dockLog.setText(t("info.waiting_extension"))
                     extensionLoader.callEveryExtension("after_receiving_messages",ChatContents)
 
                     # print(ChatContents,ChatContentsList) 
 
                     # conversationText=[str(text) for text iChatContentsts]
                     
-                    dockLog.setText("等待语言模型生成答案")
+                    dockLog.setText(t("info.waiting_answer"))
                     #send answer
                     click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
                     
@@ -386,11 +387,11 @@ if __name__ == '__main__':
                         with open(TOKENCOUNTFILE,'w',encoding='utf8') as f:
                             f.write(str(totalTokens))
                     except Exception as e:
-                        logger.error(f"语言模型生成答案失败\n{e}")
-                        dockLog.setText("× 语言模型生成答案失败")
+                        logger.error(f"{t('error.answer_failed')}\n{e}")
+                        dockLog.setText(t("docklog.answer_failed"))
                         result=""
                     
-                    dockLog.setText("等待扩展完成操作")
+                    dockLog.setText(t("info.waiting_extension"))
                     result2=extensionLoader.callEveryExtension("before_sending_the_message_by_AI_generated",result)
 
 
@@ -401,12 +402,12 @@ if __name__ == '__main__':
                         result=""
                     if result.strip()=="":
                         if withImage and sendImagePossibility>0:
-                            logger.warning("答案未生成,上传图片")
+                            logger.warning(t("warning.answer_not_generated"))
                             UploadImageWithoutSend(uploadImagePossibleActualSize)
                             HotKey('ctrl','enter')
-                            logger.info("退出会话")
+                            logger.info(t("info.quit_conversation"))
                         else:
-                            logger.error("答案未生成,退出会话")
+                            logger.error(t("error.answer_not_generated_quit"))
                         GoBack()
                         continue
                     click(commentSectionActualSize[0]+((commentSectionActualSize[2]-commentSectionActualSize[0])//2),commentSectionActualSize[1]+((commentSectionActualSize[3]-commentSectionActualSize[1])//2))
@@ -420,16 +421,16 @@ if __name__ == '__main__':
 
                     # click "send" button
                     time.sleep(2)
-                    logger.info("发送消息")
+                    logger.info(t("info.sent_message"))
                     HotKey('ctrl','enter')
-                    dockLog.setText("发送消息 🎉")
+                    dockLog.setText(t("docklog.sent_message"))
                     # click(sendButtonActualSize[0]+((sendButtonActualSize[2]-sendButtonActualSize[0])//2)
                     #         ,sendButtonActualSize[1]+((sendButtonActualSize[3]-sendButtonActualSize[1])//2))
                     
                     time.sleep(.1)
 
                     # exit conversation
-                    logger.info("退出会话")
+                    logger.info(t("info.quit_conversation"))
                     CleanInputSection()
                     GoBack()
                 # else:
@@ -437,20 +438,20 @@ if __name__ == '__main__':
                 #         conversationImages.findImageBegin()
                 else:
                     time.sleep(2) # 防止截图过快对硬盘损伤大
-                    dockLog.setText("正在寻找新信息...")
+                    dockLog.setText(t("info.searching_new"))
             except KeyboardInterrupt:
-                logger.error(f"{Fore.RED}结束运行{Fore.RESET}")
+                logger.error(f"{Fore.RED}{t('error.exit_run')}{Fore.RESET}")
                 autoFocusShouldRun=False
                 raise SystemExit
-                if t:
-                    t.join()
+                if auto_thread:
+                    auto_thread.join()
     except KeyboardInterrupt:
-        logger.error(f"{Fore.RED}结束运行{Fore.RESET}")
+        logger.error(f"{Fore.RED}{t('error.exit_run')}{Fore.RESET}")
         dockLog.stop_floating_window()
         
         autoFocusShouldRun=False
         raise SystemExit
-        if t:
-            t.join()
+        if auto_thread:
+            auto_thread.join()
         
 

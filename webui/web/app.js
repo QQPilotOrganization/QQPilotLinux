@@ -12,8 +12,35 @@
     config: null,
     page: "launch",
     jsonTarget: "",
+    translations: {},
     consoles: { upgrade: null, images: null },
   };
+
+  // ---------------------------------------------------------------- i18n
+  /** 翻译函数：T("key") 或 T("key", {name: "value"}) */
+  function T(key, params) {
+    let text = state.translations[key];
+    if (text === undefined) text = "X" + key;
+    if (params && typeof text === "string") {
+      for (const [k, v] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+      }
+    }
+    return text.replace('PROGRAM_NAME',state.translations['program.name']);
+  }
+
+  /** 给带 data-i18n / data-i18n-aria-label 的静态节点填入当前语言文本。 */
+  function applyStaticI18n(root) {
+    const scope = root || document;
+    scope.querySelectorAll("[data-i18n]").forEach((node) => {
+      node.textContent = T(node.dataset.i18n);
+    });
+    scope.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+      node.setAttribute("aria-label", T(node.dataset.i18nAriaLabel));
+    });
+    // CSS 里的可见文案（如控制台占位符）通过自定义属性注入
+    document.documentElement.style.setProperty("--console-empty", JSON.stringify(T("ui.console.empty")));
+  }
 
   // ------------------------------------------------------------------ dom
   function el(tag, props, ...children) {
@@ -71,7 +98,7 @@
   async function call(name, ...args) {
     const api = window.pywebview && window.pywebview.api;
     if (!api || typeof api[name] !== "function") {
-      throw new Error("桌面窗口尚未就绪");
+      throw new Error(T("api.not_ready"));
     }
     return api[name](...args);
   }
@@ -90,19 +117,21 @@
   }
 
   // ------------------------------------------------------------------ nav
-  const NAV = [
-    { id: "launch", label: "启动台" },
-    { id: "settings", label: "运行设置" },
-    { id: "extensions", label: "扩展管理" },
-    { id: "upgrade", label: "升级助手" },
-    { id: "images", label: "图片导入" },
-    { id: "json", label: "额外参数" },
-  ];
+  function getNavItems() {
+    return [
+      { id: "launch", label: T("ui.nav.launch") },
+      { id: "settings", label: T("ui.nav.settings") },
+      { id: "extensions", label: T("ui.nav.extensions") },
+      { id: "upgrade", label: T("ui.nav.upgrade") },
+      { id: "images", label: T("ui.nav.images") },
+      { id: "json", label: T("ui.nav.json") },
+    ];
+  }
 
   function renderNav() {
     const nav = $("#nav");
     nav.replaceChildren(
-      ...NAV.map((item) =>
+      ...getNavItems().map((item) =>
         el(
           "button",
           {
@@ -124,7 +153,7 @@
     const pilot = $("#pilot");
     const running = !!state.app.running;
     pilot.classList.toggle("is-running", running);
-    $("#pilotState").textContent = running ? "正在运行" : "未运行";
+    $("#pilotState").textContent = running ? T("ui.pilot.running") : T("ui.pilot.idle");
     const bits = [];
     if (state.app.version) bits.push(`v${state.app.version}`);
     if (state.app.platform) bits.push(state.app.platform);
@@ -134,7 +163,7 @@
     if (sub && state.config && state.config.name) sub.textContent = state.config.name;
 
     const btn = $("#railLaunch");
-    btn.textContent = running ? "停止 QQPilot" : "启动 QQPilot";
+    btn.textContent = running ? T("ui.launch.stop_btn") : T("ui.launch.start_btn");
     btn.classList.toggle("is-stop", running);
   }
 
@@ -148,14 +177,14 @@
 
   // ------------------------------------------------------------ page frame
   async function navigate(page) {
-    if (!NAV.some((item) => item.id === page)) page = "launch";
+    if (!getNavItems().some((item) => item.id === page)) page = "launch";
     state.page = page;
     state.consoles.upgrade = null;
     state.consoles.images = null;
     renderNav();
     const spec = PAGES[page];
-    $("#pageTitle").textContent = spec.title;
-    $("#pageLede").textContent = spec.lede;
+    $("#pageTitle").textContent = spec.title ? spec.title() : "";
+    $("#pageLede").textContent = spec.lede ? spec.lede() : "";
     const actions = $("#pageActions");
     const view = $("#view");
     actions.replaceChildren();
@@ -167,7 +196,7 @@
         el(
           "div",
           { class: "section" },
-          el("div", { class: "section-head" }, el("h2", { text: "这一页没能加载" })),
+          el("div", { class: "section-head" }, el("h2", { text: T("ui.error.page_load") })),
           el("p", { class: "lede", text: String(error && error.message ? error.message : error) })
         )
       );
@@ -286,18 +315,18 @@
 
   // ============================================================ page: launch
   const launchPage = {
-    title: "启动台",
-    lede: "让 QQPilot 接管屏幕：读取消息、请求模型、发送回复。",
+    title: () => T("ui.launch.title"),
+    lede: () => T("ui.launch.lede"),
     async mount(view, actions) {
       const stateLine = el("div", { class: "state" });
       const hero = el("div", { class: "hero-main" }, stateLine);
       const startBtn = el("button", { class: "btn btn-accent", type: "button" });
-      const stopBtn = el("button", { class: "btn", type: "button", text: "停止" });
+      const stopBtn = el("button", { class: "btn", type: "button", text: T("ui.launch.stop_btn") });
       hero.append(
         el(
           "p",
           {
-            text: "启动后 QQPilot 会持续框选屏幕上的新消息，按你的设置请求模型，并把回复发回对话。",
+            text: T("ui.launch.running_hint"),
           }
         ),
         el("div", { class: "field-row" }, startBtn, stopBtn)
@@ -310,24 +339,24 @@
         "div",
         { class: "quick" },
         el("button", { type: "button", onclick: () => navigate("settings") },
-          el("strong", { text: "运行设置" }), el("small", { text: "模型、服务器、提示词" })),
+          el("strong", { text: T("ui.launch.quick_settings") }), el("small", { text: T("ui.launch.quick_settings_desc") })),
         el("button", { type: "button", onclick: () => navigate("extensions") },
-          el("strong", { text: "扩展管理" }), el("small", { text: "启用或停用扩展" })),
+          el("strong", { text: T("ui.launch.quick_extensions") }), el("small", { text: T("ui.launch.quick_extensions_desc") })),
         el("button", { type: "button", onclick: () => navigate("upgrade") },
-          el("strong", { text: "升级助手" }), el("small", { text: "部署到其他目录" })),
+          el("strong", { text: T("ui.launch.quick_upgrade") }), el("small", { text: T("ui.launch.quick_upgrade_desc") })),
         el("button", { type: "button", onclick: () => navigate("images") },
-          el("strong", { text: "图片导入" }), el("small", { text: "批量复制图片素材" }))
+          el("strong", { text: T("ui.launch.quick_images") }), el("small", { text: T("ui.launch.quick_images_desc") }))
       );
 
       const steps = section(
-        "第一次使用",
-        "QQPilot 依赖一个能看懂聊天记录的语言模型，或者一个 OneBot 机器人后端。",
+        T("ui.launch.howto_title"),
+        T("ui.launch.howto_desc"),
         el(
           "ol",
           { class: "steps" },
-          el("li", { text: "在“运行设置”里选好服务器：Ollama、内置模型、OneBot 直连，或任意 Chat Completion 地址。" }),
-          el("li", { text: "打开 QQ，把要处理的聊天窗口停在屏幕上的固定位置。" }),
-          el("li", { text: "回到这里点“启动”，QQPilot 会自己完成剩下的循环。" })
+          el("li", { text: T("ui.launch.howto_step1") }),
+          el("li", { text: T("ui.launch.howto_step2") }),
+          el("li", { text: T("ui.launch.howto_step3") })
         ),
         el("div", { class: "quick", style: "margin-top:16px" }, quick)
       );
@@ -339,15 +368,15 @@
         hero.classList.toggle("is-running", running);
         stateLine.replaceChildren(
           el("span", { class: "lamp" }),
-          el("h2", { text: running ? "QQPilot 正在运行" : "QQPilot 未运行" })
+          el("h2", { text: running ? T("ui.launch.running") : T("ui.launch.idle") })
         );
-        startBtn.textContent = running ? "重新启动" : "启动 QQPilot";
+        startBtn.textContent = running ? T("ui.launch.restart_btn") : T("ui.launch.start_btn");
         startBtn.disabled = running;
         stopBtn.disabled = !running;
         stats.replaceChildren(
-          el("dl", { class: "stat" }, el("dt", { text: "版本" }), el("dd", { text: state.app.version ? `v${state.app.version} · ${state.app.platform}` : "—" })),
-          el("dl", { class: "stat" }, el("dt", { text: "Token 用量" }), el("dd", { text: String(state.app.tokens ?? 0) })),
-          el("dl", { class: "stat" }, el("dt", { text: "安装目录" }), el("dd", { text: state.app.root || "—" }))
+          el("dl", { class: "stat" }, el("dt", { text: T("ui.launch.stat_version") }), el("dd", { text: state.app.version ? `v${state.app.version} · ${state.app.platform}` : "—" })),
+          el("dl", { class: "stat" }, el("dt", { text: T("ui.launch.stat_tokens") }), el("dd", { text: String(state.app.tokens ?? 0) })),
+          el("dl", { class: "stat" }, el("dt", { text: T("ui.launch.stat_root") }), el("dd", { text: state.app.root || "—" }))
         );
       }
 
@@ -378,8 +407,8 @@
 
   // ========================================================== page: settings
   const settingsPage = {
-    title: "运行设置",
-    lede: "这些值会写回 config.ini，下次启动生效。",
+    title: () => T("ui.settings.title"),
+    lede: () => T("ui.settings.lede"),
     async mount(view, actions) {
       const cfg = await call("get_config");
       state.config = cfg;
@@ -394,45 +423,45 @@
       };
 
       // 身份
-      const sIdentity = section("身份", "程序用用户名判断哪些消息是自己发出去的。");
+      const sIdentity = section(T("ui.settings.section_identity"), T("ui.settings.section_identity_desc"));
       const gIdentity = el("div", { class: "grid" });
-      gIdentity.append(...row("用户名", need(textInput(cfg.name), "name"), "与 QQ 里的昵称一致"));
+      gIdentity.append(...row(T("ui.settings.username"), need(textInput(cfg.name), "name"), T("ui.settings.username_hint")));
       sIdentity.append(gIdentity);
 
       // 运行
-      const sRun = section("运行", "控制截图框选与回复节奏。");
+      const sRun = section(T("ui.settings.section_run"), T("ui.settings.section_run_desc"));
       const gRun = el("div", { class: "grid" });
-      gRun.append(...row("窗口宽度", need(textInput(cfg.width, { inputmode: "numeric" }), "width"), "QQ 窗口的像素宽度"));
-      gRun.append(...row("窗口高度", need(textInput(cfg.height, { inputmode: "numeric" }), "height"), "QQ 窗口的像素高度"));
-      gRun.append(...row("框选消息时长（秒）", need(textInput(cfg.scroll, { inputmode: "numeric" }), "scroll"), "拖动框选聊天记录时按住的时间"));
-      gRun.append(...row("按下 Tab 次数", need(select([{ value: "8", label: "8 次" }, { value: "7", label: "7 次" }], cfg.tab_times), "tab_times"), "框选时总是点到删除等按键时，试试改成 7"));
-      gRun.append(...row("解析图片数", need(textInput(cfg.maximagecount, { inputmode: "numeric" }), "maximagecount"), "本地模型解析多张图片会明显变慢"));
-      gRun.append(...row("发送图片概率", need(rangeControl(cfg.sendimagepossibility), "sendimagepossibility"), "答案为空时，按这个概率改为发送图片"));
-      gRun.append(...row("自动点击登录", switchControl(cfg.autologin), "启动后自动点掉登录按钮"));
-      gRun.append(...row("持续置于最前", switchControl(cfg.autofocusing), "不断把 QQ 窗口拉到最前面"));
-      gRun.append(...row("包含图片", switchControl(cfg.withimage), "把聊天里的图片一起交给模型"));
-      gRun.append(...row("只检查 @", switchControl(cfg.atdetect), "只有被 @ 的消息才回复"));
+      gRun.append(...row(T("ui.settings.width"), need(textInput(cfg.width, { inputmode: "numeric" }), "width"), T("ui.settings.width_hint")));
+      gRun.append(...row(T("ui.settings.height"), need(textInput(cfg.height, { inputmode: "numeric" }), "height"), T("ui.settings.height_hint")));
+      gRun.append(...row(T("ui.settings.scroll"), need(textInput(cfg.scroll, { inputmode: "numeric" }), "scroll"), T("ui.settings.scroll_hint")));
+      gRun.append(...row(T("ui.settings.tab_times"), need(select([{ value: "8", label: T("ui.settings.tab_times_option", { n: 8 }) }, { value: "7", label: T("ui.settings.tab_times_option", { n: 7 }) }], cfg.tab_times), "tab_times"), T("ui.settings.tab_times_hint")));
+      gRun.append(...row(T("ui.settings.maximage"), need(textInput(cfg.maximagecount, { inputmode: "numeric" }), "maximagecount"), T("ui.settings.maximage_hint")));
+      gRun.append(...row(T("ui.settings.sendimagepossibility"), need(rangeControl(cfg.sendimagepossibility), "sendimagepossibility"), T("ui.settings.sendimagepossibility_hint")));
+      gRun.append(...row(T("ui.settings.autologin"), switchControl(cfg.autologin), T("ui.settings.autologin_hint")));
+      gRun.append(...row(T("ui.settings.autofocusing"), switchControl(cfg.autofocusing), T("ui.settings.autofocusing_hint")));
+      gRun.append(...row(T("ui.settings.withimage"), switchControl(cfg.withimage), T("ui.settings.withimage_hint")));
+      gRun.append(...row(T("ui.settings.atdetect"), switchControl(cfg.atdetect), T("ui.settings.atdetect_hint")));
       sRun.append(gRun);
 
       // 模型与服务器
-      const sModel = section("模型与服务器", "决定回复由谁生成。");
+      const sModel = section(T("ui.settings.section_model"), T("ui.settings.section_model_desc"));
       const gModel = el("div", { class: "grid" });
-      gModel.append(...row("模型名称", need(textInput(cfg.modelname), "modelname")));
-      gModel.append(...row("视觉模型", switchControl(cfg.isvisionmodel), "模型能否理解图片"));
+      gModel.append(...row(T("ui.settings.modelname"), need(textInput(cfg.modelname), "modelname")));
+      gModel.append(...row(T("ui.settings.vision_model"), switchControl(cfg.isvisionmodel), T("ui.settings.vision_model_hint")));
 
-      const customRow = row("自定义地址", need(textInput(cfg.custom_server_url, { placeholder: "http://192.168.1.100:8000/v1" }), "custom_server_url"), "填到 /v1 为止的 base URL");
+      const customRow = row(T("ui.settings.custom_url"), need(textInput(cfg.custom_server_url, { placeholder: "http://192.168.1.100:8000/v1" }), "custom_server_url"), T("ui.settings.custom_url_hint"));
       const onebotGrid = el("div", { class: "grid" });
-      onebotGrid.append(...row("WebSocket 地址", need(textInput(cfg.websocket_server), "websocket_server"), "OneBot v11 的 WS 地址"));
-      onebotGrid.append(...row("机器人账号", need(textInput(cfg.account_id), "account_id"), "可随意填写，需与 OneBot 端一致"));
-      onebotGrid.append(...row("反向连接", switchControl(cfg.reverse), "开启=本机监听等 OneBot 连入；关闭=主动连出去"));
+      onebotGrid.append(...row(T("ui.settings.ws_server"), need(textInput(cfg.websocket_server), "websocket_server"), T("ui.settings.ws_server_hint")));
+      onebotGrid.append(...row(T("ui.settings.account_id"), need(textInput(cfg.account_id), "account_id"), T("ui.settings.account_id_hint")));
+      onebotGrid.append(...row(T("ui.settings.reverse"), switchControl(cfg.reverse), T("ui.settings.reverse_hint")));
       const onebotBlock = el(
         "div",
         { class: "section", style: "margin:6px 0 0;padding:18px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent" },
-        el("div", { class: "section-head" }, el("h2", { text: "OneBot 直连" }), el("p", { text: "api_key 会作为 CompletionConnector 的 authorization。" })),
+        el("div", { class: "section-head" }, el("h2", { text: T("ui.settings.section_onebot") }), el("p", { text: T("ui.settings.section_onebot_desc") })),
         onebotGrid
       );
 
-      const segmented = el("div", { class: "segmented", role: "group", "aria-label": "服务器" });
+      const segmented = el("div", { class: "segmented", role: "group", "aria-label": T("ui.settings.server") });
       const modeButtons = {};
       const setMode = (mode) => {
         for (const [key, btn] of Object.entries(modeButtons)) {
@@ -442,41 +471,41 @@
         onebotBlock.hidden = mode !== "onebot";
       };
       for (const mode of [
-        { id: "ollama", label: "Ollama" },
-        { id: "builtin", label: "内置模型" },
-        { id: "onebot", label: "OneBot" },
-        { id: "custom", label: "自定义" },
+        { id: "ollama", label: T("ui.settings.server_ollama") },
+        { id: "builtin", label: T("ui.settings.server_builtin") },
+        { id: "onebot", label: T("ui.settings.server_onebot") },
+        { id: "custom", label: T("ui.settings.server_custom") },
       ]) {
         const btn = el("button", { type: "button", text: mode.label, onclick: () => { state.config.server_mode = mode.id; setMode(mode.id); } });
         modeButtons[mode.id] = btn;
         segmented.append(btn);
       }
-      gModel.append(...row("服务器", segmented, "选择回复的来源"));
+      gModel.append(...row(T("ui.settings.server"), segmented, T("ui.settings.server_hint")));
       gModel.append(...customRow);
-      gModel.append(...row("API Key", need(passwordInput(cfg.api_key), "api_key"), "OneBot 模式下作为 authorization"));
-      gModel.append(...row("强制 Ollama API", switchControl(cfg.forceollamaapi), "即使地址不是 ollama，也按 /api/chat 调用"));
-      gModel.append(...row("远程超时（秒）", need(textInput(cfg.remote_server_timeout, { inputmode: "numeric" }), "remote_server_timeout"), "等待模型或 OneBot 回复的最长时间"));
+      gModel.append(...row(T("ui.settings.api_key"), need(passwordInput(cfg.api_key), "api_key"), T("ui.settings.api_key_hint")));
+      gModel.append(...row(T("ui.settings.force_ollama"), switchControl(cfg.forceollamaapi), T("ui.settings.force_ollama_hint")));
+      gModel.append(...row(T("ui.settings.remote_timeout"), need(textInput(cfg.remote_server_timeout, { inputmode: "numeric" }), "remote_server_timeout"), T("ui.settings.remote_timeout_hint")));
       sModel.append(gModel, onebotBlock);
       setMode(cfg.server_mode);
 
       // 提示词
-      const sPrompt = section("提示词", "system 会作为第一条 system 消息发给模型。");
+      const sPrompt = section(T("ui.settings.section_prompt"), T("ui.settings.section_prompt_desc"));
       const gPrompt = el("div", { class: "grid" });
       const systemBox = need(textarea(cfg.system, 10), "system");
       systemBox.style.fontFamily = "var(--font-mono)";
       systemBox.style.fontSize = "12.8px";
       gPrompt.append(
-        ...row("system", systemBox),
-        el("div", { class: "field-label" }, "额外参数"),
+        ...row(T("ui.settings.system"), systemBox),
+        el("div", { class: "field-label" }, T("ui.settings.extra_params")),
         fieldCellOf(
           "extra",
           el("button", {
             class: "btn btn-sm",
             type: "button",
             onclick: () => navigate("json"),
-            text: "编辑 extra.json",
+            text: T("ui.settings.edit_extra"),
           }),
-          el("div", { class: "inline-note", style: "margin-top:6px" }, "会合并进请求体，用于 temperature 等自定义字段")
+          el("div", { class: "inline-note", style: "margin-top:6px" }, T("ui.settings.extra_params_hint"))
         )
       );
       sPrompt.append(gPrompt);
@@ -490,12 +519,12 @@
       }
 
       // 底部操作
-      const saveBottom = el("button", { class: "btn btn-accent", type: "submit", text: "保存设置" });
+      const saveBottom = el("button", { class: "btn btn-accent", type: "submit", text: T("ui.settings.save_btn") });
       form.append(el("div", { class: "field-row", style: "margin-top:6px" }, saveBottom));
 
       actions.append(
-        el("button", { class: "btn btn-quiet", type: "button", text: "重新载入", onclick: () => navigate("settings") }),
-        el("button", { class: "btn btn-primary", type: "button", text: "保存", onclick: () => form.requestSubmit() })
+        el("button", { class: "btn btn-quiet", type: "button", text: T("ui.settings.reload"), onclick: () => navigate("settings") }),
+        el("button", { class: "btn btn-primary", type: "button", text: T("ui.settings.save"), onclick: () => form.requestSubmit() })
       );
 
       function collect() {
@@ -547,23 +576,23 @@
 
   function passwordInput(value) {
     const input = textInput(value, { type: "password" });
-    const toggle = el("button", { class: "btn btn-sm", type: "button", text: "显示" });
+    const toggle = el("button", { class: "btn btn-sm", type: "button", text: T("ui.settings.show") });
     toggle.addEventListener("click", () => {
       const hidden = input.type === "password";
       input.type = hidden ? "text" : "password";
-      toggle.textContent = hidden ? "隐藏" : "显示";
+      toggle.textContent = hidden ? T("ui.settings.hide") : T("ui.settings.show");
     });
     return el("div", { class: "field-row" }, input, toggle);
   }
 
   // ======================================================== page: extensions
   const extensionsPage = {
-    title: "扩展管理",
-    lede: "扩展是 Extensions/ 下的 Python 文件；停用会把文件改名为 .disabled。",
+    title: () => T("ui.ext.title"),
+    lede: () => T("ui.ext.lede"),
     async mount(view, actions) {
-      const status = el("p", { class: "lede", text: "正在加载…" });
+      const status = el("p", { class: "lede", text: T("ui.ext.loading") });
       const list = el("div", { class: "list" });
-      const head = section("已安装的扩展", "改动在下一次启动时生效。", list);
+      const head = section(T("ui.ext.section"), T("ui.ext.section_desc"), list);
       head.append(status);
       view.append(head);
 
@@ -582,11 +611,11 @@
                     el("div", { class: "name", text: item.name }),
                     el("div", { class: "desc", text: item.description })
                   ),
-                  el("span", { class: "tag " + (item.enabled ? "on" : "off"), text: item.enabled ? "启用" : "禁用" }),
+                  el("span", { class: "tag " + (item.enabled ? "on" : "off"), text: item.enabled ? T("ui.ext.status_enabled") : T("ui.ext.status_disabled") }),
                   el("button", {
                     class: "btn btn-sm",
                     type: "button",
-                    text: item.enabled ? "停用" : "启用",
+                    text: item.enabled ? T("ui.ext.btn_disable") : T("ui.ext.btn_enable"),
                     onclick: async (event) => {
                       event.target.disabled = true;
                       const result = await call("set_extension", item.name, !item.enabled);
@@ -596,9 +625,9 @@
                   })
                 )
               )
-            : [el("div", { class: "list-item" }, el("div", { class: "grow" }, el("div", { class: "name", text: "还没有扩展" }), el("div", { class: "desc", text: "把 .py 文件放进 Extensions/ 目录即可。" })))])
+            : [el("div", { class: "list-item" }, el("div", { class: "grow" }, el("div", { class: "name", text: T("ui.ext.empty") }), el("div", { class: "desc", text: T("ui.ext.empty_hint") })))])
         );
-        status.textContent = items.length ? `共 ${items.length} 个扩展` : "目录为空";
+        status.textContent = items.length ? T("ui.ext.count", { count: items.length }) : T("ui.ext.dir_empty");
         if (res.dir) state.extDir = res.dir;
       }
 
@@ -607,8 +636,8 @@
       }
 
       actions.append(
-        el("button", { class: "btn", type: "button", onclick: () => { refresh(); toast("已刷新"); } }, icon("refresh"), el("span", { text: "刷新" })),
-        el("button", { class: "btn", type: "button", onclick: () => call("open_path", "Extensions") }, icon("folder"), el("span", { text: "打开目录" }))
+        el("button", { class: "btn", type: "button", onclick: () => { refresh(); toast(T("ui.ext.refreshed")); } }, icon("refresh"), el("span", { text: T("ui.ext.btn_refresh") })),
+        el("button", { class: "btn", type: "button", onclick: () => call("open_path", "Extensions") }, icon("folder"), el("span", { text: T("ui.ext.btn_open_dir") }))
       );
 
       await refresh();
@@ -617,12 +646,12 @@
 
   // =========================================================== page: upgrade
   const upgradePage = {
-    title: "升级助手",
-    lede: "把当前目录的代码复制到目标安装目录；目标已有的 config.ini 与个人配置会被保留。",
+    title: () => T("ui.upgrade.title"),
+    lede: () => T("ui.upgrade.lede"),
     async mount(view, actions) {
       const source = textInput(state.app.root || "", {});
       source.readOnly = true;
-      const dest = textInput("", { placeholder: "选择要升级到的安装目录" });
+      const dest = textInput("", { placeholder: T("ui.upgrade.dest_placeholder") });
       const log = consoleEl();
       state.consoles.upgrade = log;
 
@@ -630,16 +659,16 @@
         class: "btn",
         type: "button",
         onclick: async () => {
-          const res = await call("pick_folder", "选择目标文件夹");
+          const res = await call("pick_folder", T("ui.upgrade.pick_title"));
           if (res && res.ok && res.path) dest.value = res.path;
-          else if (res && !res.ok) toast(res.error || "无法打开文件夹选择", "bad");
+          else if (res && !res.ok) toast(res.error || T("folder.pick_failed"), "bad");
         },
-      }, icon("folder"), el("span", { text: "选择文件夹" }));
+      }, icon("folder"), el("span", { text: T("ui.upgrade.btn_pick") }));
 
-      const start = el("button", { class: "btn btn-accent", type: "button", text: "开始升级" });
+      const start = el("button", { class: "btn btn-accent", type: "button", text: T("ui.upgrade.btn_start") });
       start.addEventListener("click", async () => {
         if (!dest.value.trim()) {
-          toast("请先选择目标文件夹", "bad");
+          toast(T("ui.upgrade.err_no_dest"), "bad");
           return;
         }
         start.disabled = true;
@@ -657,25 +686,25 @@
 
       const grid = el("div", { class: "grid" });
       grid.append(
-        ...row("源目录", source, "就是程序当前所在的位置"),
-        el("div", { class: "field-label" }, "目标目录"),
+        ...row(T("ui.upgrade.source"), source, T("ui.upgrade.source_hint")),
+        el("div", { class: "field-label" }, T("ui.upgrade.dest")),
         el("div", { class: "field" }, el("div", { class: "field-row" }, dest, pick))
       );
 
       view.append(
-        section("升级到另一个目录", "适合把开发目录的改动同步到正式运行的安装目录。", grid,
+        section(T("ui.upgrade.section"), T("ui.upgrade.section_desc"), grid,
           el("div", { class: "field-row", style: "margin-top:18px" }, start)),
-        section("操作日志", null, log)
+        section(T("ui.upgrade.log"), null, log)
       );
     },
   };
 
   // ============================================================ page: images
   const imagesPage = {
-    title: "图片导入",
-    lede: "把某个文件夹里的图片批量复制到程序的 Images/ 目录。",
+    title: () => T("ui.images.title"),
+    lede: () => T("ui.images.lede"),
     async mount(view, actions) {
-      const source = textInput("", { placeholder: "选择包含图片的文件夹" });
+      const source = textInput("", { placeholder: T("ui.images.source_placeholder") });
       const log = consoleEl();
       state.consoles.images = log;
 
@@ -683,16 +712,16 @@
         class: "btn",
         type: "button",
         onclick: async () => {
-          const res = await call("pick_folder", "选择包含图片的文件夹");
+          const res = await call("pick_folder", T("ui.images.pick_title"));
           if (res && res.ok && res.path) source.value = res.path;
-          else if (res && !res.ok) toast(res.error || "无法打开文件夹选择", "bad");
+          else if (res && !res.ok) toast(res.error || T("folder.pick_failed"), "bad");
         },
-      }, icon("folder"), el("span", { text: "选择文件夹" }));
+      }, icon("folder"), el("span", { text: T("ui.images.btn_pick") }));
 
-      const start = el("button", { class: "btn btn-accent", type: "button", text: "开始复制" });
+      const start = el("button", { class: "btn btn-accent", type: "button", text: T("ui.images.btn_start") });
       start.addEventListener("click", async () => {
         if (!source.value.trim()) {
-          toast("请先选择源文件夹", "bad");
+          toast(T("ui.images.err_no_source"), "bad");
           return;
         }
         start.disabled = true;
@@ -710,28 +739,28 @@
 
       const grid = el("div", { class: "grid" });
       grid.append(
-        el("div", { class: "field-label" }, "源文件夹"),
+        el("div", { class: "field-label" }, T("ui.images.source")),
         el("div", { class: "field" }, el("div", { class: "field-row" }, source, pick)),
-        el("div", { class: "field-label" }, "目标目录"),
-        el("div", { class: "field" }, el("div", { class: "inline-note", text: "Images/（程序目录下）" }))
+        el("div", { class: "field-label" }, T("ui.images.target")),
+        el("div", { class: "field" }, el("div", { class: "inline-note", text: T("ui.images.target_hint") }))
       );
 
       actions.append(
-        el("button", { class: "btn btn-quiet", type: "button", onclick: () => call("open_path", "Images") }, icon("folder"), el("span", { text: "打开 Images" }))
+        el("button", { class: "btn btn-quiet", type: "button", onclick: () => call("open_path", "Images") }, icon("folder"), el("span", { text: T("ui.images.btn_open") }))
       );
 
       view.append(
-        section("导入图片", "支持 jpg、png、gif、bmp、webp、tiff、svg。同名文件会被覆盖。", grid,
+        section(T("ui.images.section"), T("ui.images.section_desc"), grid,
           el("div", { class: "field-row", style: "margin-top:18px" }, start)),
-        section("进度", null, log)
+        section(T("ui.images.progress"), null, log)
       );
     },
   };
 
   // ============================================================== page: json
   const jsonPage = {
-    title: "额外参数",
-    lede: "直接编辑交给模型的额外请求参数；保存前会先校验 JSON。",
+    title: () => T("ui.json.title"),
+    lede: () => T("ui.json.lede"),
     async mount(view, actions) {
       const target = state.jsonTarget || "extra.json";
       const pathInput = textInput(target);
@@ -743,11 +772,11 @@
       async function load() {
         const res = await call("read_json", pathInput.value.trim() || "extra.json");
         if (!res.ok) {
-          status.textContent = res.error || "读取失败";
+          status.textContent = res.error || T("json.read_failed");
           return;
         }
         editor.value = res.text || "";
-        status.textContent = res.exists ? `已载入 ${res.path}` : `${res.path} 还不存在，保存后会创建`;
+        status.textContent = res.exists ? T("ui.json.status_loaded", { path: res.path }) : T("ui.json.status_new", { path: res.path });
       }
 
       const format = el("button", {
@@ -756,20 +785,20 @@
         onclick: () => {
           try {
             editor.value = JSON.stringify(JSON.parse(editor.value || "{}"), null, 4);
-            status.textContent = "已格式化";
+            status.textContent = T("json.format_ok");
           } catch (error) {
-            status.textContent = `JSON 解析失败：${error.message}`;
+            status.textContent = T("ui.json.parse_failed", { msg: error.message });
           }
         },
-      }, icon("wand"), el("span", { text: "格式化" }));
+      }, icon("wand"), el("span", { text: T("ui.json.btn_format") }));
 
-      const save = el("button", { class: "btn btn-accent", type: "button", text: "保存" });
+      const save = el("button", { class: "btn btn-accent", type: "button", text: T("ui.json.btn_save") });
       save.addEventListener("click", async () => {
         save.disabled = true;
         try {
           const res = await call("write_json", { path: pathInput.value.trim() || target, text: editor.value });
           toast(res.message, res.ok ? "ok" : "bad");
-          if (res.ok) status.textContent = `已保存 ${res.path}`;
+          if (res.ok) status.textContent = T("ui.json.status_saved", { path: res.path });
         } catch (error) {
           toast(String(error.message || error), "bad");
         } finally {
@@ -781,15 +810,15 @@
 
       const grid = el("div", { class: "grid" });
       grid.append(
-        el("div", { class: "field-label" }, "文件"),
+        el("div", { class: "field-label" }, T("ui.json.file")),
         fieldCellOf("path", pathInput),
-        el("div", { class: "field-label" }, "内容"),
+        el("div", { class: "field-label" }, T("ui.json.content")),
         fieldCellOf("text", editor)
       );
 
       actions.append(format, save);
       view.append(
-        section("JSON 内容", "这里的内容会合并进每次请求体，可覆盖同名键（如 temperature）。", grid, status,
+        section(T("ui.json.section_title"), T("ui.json.content_desc"), grid, status,
           el("div", { class: "field-row", style: "margin-top:16px" }, format, save))
       );
 
@@ -819,6 +848,9 @@
     try {
       const boot = await call("bootstrap");
       state.jsonTarget = boot.jsonTarget || "";
+      state.translations = boot.translations || {};
+      if (boot.language) document.documentElement.lang = String(boot.language).replace("_", "-");
+      applyStaticI18n();
       setPilot(boot.app);
       $("#brandSub").textContent = (boot.app && boot.app.onebot) ? "onebot" : "neko";
       $("#railLaunch").addEventListener("click", async () => {
@@ -838,7 +870,7 @@
       await navigate(boot.page || "launch");
       $("#boot").classList.add("hide");
     } catch (error) {
-      $("#bootText").textContent = `无法连接桌面窗口：${error.message || error}`;
+      $("#bootText").textContent = T("ui.boot.failed", { msg: error.message || error });
     }
   }
 
@@ -850,7 +882,7 @@
     window.addEventListener("pywebviewready", init, { once: true });
     setTimeout(() => {
       if (!window.pywebview) {
-        $("#bootText").textContent = "请通过 QQPilot 桌面窗口打开本界面。";
+        $("#bootText").textContent = T("ui.boot.open_in_window");
       }
     }, 2500);
   }

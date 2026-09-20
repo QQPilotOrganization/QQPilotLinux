@@ -1,6 +1,7 @@
 
 import requests
 import configparser
+from localization import t
 # url = "http://localhost:8000/v1/chat/completions"
 
 parser=configparser.ConfigParser()
@@ -10,7 +11,7 @@ model=parser['general']['modelname']
 print(url)
 print(model)
 
-messages=[{"role": "user", "content": input("请输入：")}]
+messages=[{"role": "user", "content": input(t("test.input_prompt"))}]
 while True:
     payload = {
         "model": model,
@@ -24,10 +25,10 @@ while True:
     if response.status_code == 200:
         data = response.json()
         reply = data["choices"][0]["message"]["content"]
-        print("模型回复：")
+        print(t("test.model_reply"))
         print(reply)
         messages.append({"role": "assistant", "content": reply})
-        messages.append({"role": "user", "content": input("请输入：")})
+        messages.append({"role": "user", "content": input(t("test.input_prompt"))})
     else:
-        print(f"请求失败，状态码: {response.status_code}")
+        print(f'{t("test.request_failed")}: {response.status_code}')
         print(response.text)

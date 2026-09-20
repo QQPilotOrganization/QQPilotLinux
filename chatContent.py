@@ -1,5 +1,6 @@
 import os
 from typing import List
+from localization import t
 
 
 
@@ -18,11 +19,11 @@ class ChatContent:
         self.ownByMyself = ownByMyself
         self.empty=True if self.text else False
     def report(self) -> str:
-        prefix = '[你]' if self.ownByMyself else ''
+        prefix = t('chat.self_prefix') if self.ownByMyself else ''
         content = self.text if self.text else ""
         images = [image for image in self.imagePaths if os.path.exists(image)]
-        images_str = str(images) if images else "无"
-        return f'{prefix}{self.username}: {content}\n{self.time}\n 图片：{images_str}'
+        images_str = str(images) if images else t('chat.no_image')
+        return f'{prefix}{self.username}: {content}\n{self.time}\n {t("chat.image_label")}{images_str}'
     # 
     def __str__(self) -> str:
         if self.ownByMyself:

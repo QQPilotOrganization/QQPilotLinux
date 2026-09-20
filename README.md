@@ -260,6 +260,29 @@ ollama pull huihui_ai/deepseek-r1-abliterated:8b
 
 ---
 
+## 🌐 本地化（i18n）
+
+参照 Windows 版 `localization.rs` 的做法，所有面向用户的文案都走 `localization` 包，
+代码里不再出现硬编码文本。
+
+- 翻译文件：`localization/<语言>.json`（当前为 `zh_CN.json`）；
+- 语言由 `config.ini` 的 `[general] language` 选择，缺省 `zh_CN`；
+- 后端用法：`from localization import t`，然后 `t("key")` / `t("key", name=value)`；
+- 前端用法：`bootstrap()` 会把整张翻译表交给 JS，页面里用 `T("key")`；
+- 找不到翻译时返回 `"X" + key`（与 Rust 版一致，方便一眼看出漏翻）。
+
+新增一条文案：先在 `localization/zh_CN.json` 加键值，再在代码里引用该键。
+可以跑自检确认没有漏键、也没有残留硬编码：
+
+```bash
+uv run python -m localization.check   # 缺失/未使用/硬编码 三项体检
+```
+
+要加新语言，复制一份 `zh_CN.json` 改成如 `en_US.json`，再把 `config.ini` 的
+`language` 改过去即可（前端会跟随 `bootstrap()` 返回的语言）。
+
+---
+
 ## 🛡️ 免责声明
 
 本软件 **仅限技术学习与研究用途**，严禁用于：

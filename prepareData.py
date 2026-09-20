@@ -1,4 +1,5 @@
 import json
+from localization import t
 pair={}
 with open('train.jsonl', 'r', encoding='utf8') as f:
     questions=[]
@@ -16,4 +17,4 @@ with open('tokenizer.json','w',encoding='utf8') as f:
 with open('datasetTiny.jsonl', 'w', encoding='utf8') as f:
     json.dump(pair,f,ensure_ascii=False)
 
-print("√ 数据处理完成")
+print(t("data.done"))

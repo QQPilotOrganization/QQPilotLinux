@@ -5,6 +5,7 @@ import time
 from tkinter import font
 import sysDetect
 import configparser
+from localization import t
 config=configparser.ConfigParser()
 config.read('config.ini',encoding='utf-8')
 
@@ -30,7 +31,7 @@ class FloatingTextApp:
     def create_window(self):
         """创建悬浮窗口"""
         self.root = tk.Tk()
-        self.root.title("调试")
+        self.root.title(t("program.name"))
         
         # 设置窗口属性 - 去掉标题栏，置顶显示
         self.root.overrideredirect(True)  # 去掉窗口边框
@@ -72,7 +73,7 @@ class FloatingTextApp:
         self.display_text = tk.Label(
             container,
             text="The quick brown fox jumps over the lazy dog.",
-            font=("微软雅黑", 11, "bold"),
+            font=(t("ui.font.family"), 11, "bold"),
             bg='#242424',
             fg='#ecf0f1',
             # wraplength=1000,
@@ -118,7 +119,7 @@ class FloatingTextApp:
                     break
                     
         except Exception as e:
-            print(f"❌ 窗口运行出错: {e}")
+            print(f'{t("docklog.window_error")}: {e}')
         finally:
             self.cleanup()
             
@@ -179,18 +180,16 @@ def stop_floating_window():
 
 # 使用示例
 if __name__ == "__main__":
-    print("🎉 开始演示浮窗功能！")
+    print(t("demo.dock_start"))
     
     # 1. 启动浮窗
     app = start_floating_window()
     
     # 2. 演示不同文字更新
     messages = [
-        "你好呀！你好呀！你好呀！你好呀！你好呀！你好呀！你好呀！你好呀！",
-        "我在右下角陪你哦~",
-        "随时可以更新我！",
-        "Python真好玩！",
-        "当前时间: " + time.strftime("%H:%M:%S")
+        t("demo.dock_hello"),
+        t("demo.dock_update"),
+        t("demo.dock_time") + ": " + time.strftime("%H:%M:%S"),
     ]
     
     for msg in messages:
@@ -198,7 +197,7 @@ if __name__ == "__main__":
         time.sleep(2)
     
     # 3. 最后留个温馨的提示
-    setText("浮窗演示结束，右键点击可关闭")
+    setText(t("demo.dock_end"))
     
     # 保持主线程运行
     try:
@@ -206,4 +205,4 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         stop_floating_window()
-        print("再见啦！")
+        print(t("demo.dock_bye"))

@@ -7,6 +7,7 @@ import os
 import subprocess
 from windmouse.pyautogui_controller import PyautoguiMouseController
 from windmouse.core import Coordinate
+from localization import t
 
 # Initialize the controller
 mouse = PyautoguiMouseController(    
@@ -35,14 +36,10 @@ wmctrlsh='''#!/bin/bash
 while IFS= read -r line; do
     [[ -n "$line" ]] || continue
     
-    # 提取窗口 ID
     win_id=${line%% *}
     
-    # 提取窗口标题（去掉前两列：ID 和 主机名）
-    # 使用 awk 获取从第3列开始的所有内容作为标题
     win_title=$(echo "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
     
-    # 判断标题是否完全等于 qq (忽略大小写)
     if [[ "${win_title,,}" == "qq" ]]; then
         wmctrl -i -r "$win_id" -e 0,0,0,WIDTH,HEIGHT
     fi
@@ -168,7 +165,7 @@ def PasteTextToSection(text:str,section: tuple[int, int, int, int]):
     
 def SendText(text:str,section: tuple[int, int, int, int]):
     temp=''
-    print(Fore.GREEN,"发消息->" + text)
+    print(Fore.GREEN, t("gui.send_message") + text)
 
     for message in text.split("[[NEXT]]"):
         m=message.split("\n")

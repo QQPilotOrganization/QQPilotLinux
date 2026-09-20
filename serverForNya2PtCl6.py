@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import requests
 import json
+from localization import t
 
 app = Flask(__name__)
 
@@ -22,7 +23,7 @@ def getAnswer(question:str,)->str:
 def chat():
     data = request.get_json()
     if not data or 'text' not in data:
-        return jsonify({"error": "缺少字段 'text'"}), 400
+        return jsonify({"error": t("server.missing_text")}), 400
 
     question = data['text']
     try:

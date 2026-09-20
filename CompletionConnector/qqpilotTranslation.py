@@ -24,7 +24,7 @@ class ChatManager(DBConnector.DB):
                         );''')
         self.execute('''CREATE TABLE IF NOT EXISTS Groups (
                             group_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT DEFAULT '' -- 可选，用于标记群名
+                            name TEXT DEFAULT ''
                         );''')
 
         self.execute('''CREATE TABLE IF NOT EXISTS PrivateChat (

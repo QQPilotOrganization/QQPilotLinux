@@ -2,6 +2,7 @@ from chatContent import ChatContent
 from typing import List
 import answer
 import configparser
+from localization import t
 parser=configparser.ConfigParser()
 from messagebox import *
 import GUIOperations2
@@ -12,8 +13,8 @@ option=parser.read("config.ini",encoding='utf-8')
 # Vision QQ 扩展 API
 # 不要修改这里的代码
 ###################
-def notify(text:str,title:str="提示"):
-    MessageBox(text,title=title)
+def notify(text:str,title:str=""):
+    MessageBox(text,title=title or t('dialog.default_title'))
 def get_answer_as_string(question:str,system_prompt:str):
     # 从配置的LLM中获取答案
     # 参数

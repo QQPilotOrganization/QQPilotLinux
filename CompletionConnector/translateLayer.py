@@ -36,6 +36,7 @@ from version import VERSION
 import websocketConnector
 from clr import *
 from config import LoadConfig
+from localization import t
 
 # 出站翻译实现登记表：config 中的名字 → 可导入的模块名。
 # 新增实现时在此登记，并在该模块内实现 ToMessageEvent(newMessages, allMessages)。
@@ -68,7 +69,7 @@ def ToMessageEvent(
     （qqpilotTranslation / basicTranslation），两者签名一致。
     """
     module = get_translator_module()
-    LogColored("[TranslateLayer] 翻译到OneBot消息",Fore.RESET)
+    LogColored("[TranslateLayer] " + t("cc.to_onebot"),Fore.RESET)
     return module.ToMessageEvent(newMessages, allMessages)
 
 
@@ -82,7 +83,7 @@ SEND_ACTIONS = ("send_private_msg", "send_group_msg", "send_msg")
 
 def ToChatCompletionMessageContent(segment: Message2.MessageSegment)-> dict[str, Union[str,Any]]:
     module=get_translator_module()
-    LogColored("[TranslateLayer] 翻译到Chat Completion消息",Fore.RESET)
+    LogColored("[TranslateLayer] " + t("cc.to_chatcompletion"),Fore.RESET)
     
     return module.ToChatCompletionMessageContent(segment)
 
@@ -202,19 +203,19 @@ def HandleIncomingEvent(data: dict) -> None:
     # 2) 其他 API 调用（get_login_info / get_version_info / ...）→ 通用成功响应
     if data.get("action"):
         _reply_success(data)
-        LogColored("[TranslateLayer] 已应答 API 调用:", data.get("action"),Fore.MAGENTA)
+        LogColored("[TranslateLayer] " + t("cc.api_replied") + ":", data.get("action"),Fore.MAGENTA)
         return
 
     # 3) 元事件（心跳/生命周期）仅记录
     if data.get("post_type") == "meta_event":
         meta_type = data.get("meta_event_type")
         if meta_type == "lifecycle":
-            LogColored(f"[TranslateLayer] 生命周期: {data.get('sub_type')}",Fore.RESET)
+            LogColored(f"[TranslateLayer] {t('cc.lifecycle')}: {data.get('sub_type')}",Fore.RESET)
         return
 
     # 4) 其余事件（消息/通知/请求）记录
     if data.get("post_type") == "message":
-        LogColored(f"[TranslateLayer] 收到消息事件: {data.get('raw_message')}",Fore.RESET)
+        LogColored(f"[TranslateLayer] {t('cc.message_event')}: {data.get('raw_message')}",Fore.RESET)
 
 
 def WaitForReply(timeout: float = 30.0) -> Optional[dict]:
@@ -267,7 +268,7 @@ def WaitForAllReplies(timeout: float = 30.0) -> Optional[dict]:
 def Initialize() -> None:
     """注册事件处理器（模块导入时自动调用）"""
     websocketConnector.set_event_handler(HandleIncomingEvent)
-    LogColored("[TranslateLayer] 翻译器已初始化，当前实现:", _translation_implement,Fore.LIGHTRED_EX)
+    LogColored("[TranslateLayer] " + t("cc.translator_ready") + ":", _translation_implement,Fore.LIGHTRED_EX)
 
 
 Initialize()

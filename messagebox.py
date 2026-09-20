@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+from localization import t
 MB_OK = 0x0
 MB_OKCANCEL = 0x1
 MB_YESNO = 0x4
@@ -20,7 +21,9 @@ import subprocess
 import os
 import sysDetect
 
-def MessageBox(text, title="提示", style=MB_OK | MB_ICONINFO):
+def MessageBox(text, title="", style=MB_OK | MB_ICONINFO):
+    if not title:
+        title = t('dialog.default_title')
     # """
     # 跨平台消息框函数，根据平台和可用库显示消息框
     # """
@@ -92,7 +95,7 @@ import sys
 def main():
     if len(sys.argv) > 1:  # 运行时指定参数
         text = sys.argv[1]
-        title = "提示"
+        title = t("dialog.default_title")
         style = MB_OK | MB_ICONINFO
         if len(sys.argv) > 2:
             title = sys.argv[2]
@@ -100,7 +103,7 @@ def main():
             style = int(sys.argv[3])
         result = _show_tk_message_box(text, title, style)
         sys.exit(result)
-    sys.exit( _show_tk_message_box("这是一个测试消息框",'',''))
+    sys.exit( _show_tk_message_box(t("demo.messagebox"),'',''))
 
 if __name__ == "__main__":
     main()

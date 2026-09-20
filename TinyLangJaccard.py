@@ -1,5 +1,6 @@
 import json
 import os 
+from localization import t
 if not os.path.exists('datasetTiny.json'):
     import prepareData
     
@@ -37,8 +38,8 @@ def answer(question):
     print(pair[best_match])
     return pair[best_match]
 if __name__ == '__main__':
-    print('TinyLangJaccard 测试')
-    print('数据集:https://www.modelscope.cn/datasets/Moemuu/Muice-Dataset/files')
+    print(t("tinylm.test_title"))
+    print(t("tinylm.dataset") + ":https://www.modelscope.cn/datasets/Moemuu/Muice-Dataset/files")
     while True:
-        answer(input('请输入问题: '))
+        answer(input(t("tinylm.input_prompt") + ": "))
     # print(answer("啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊"))

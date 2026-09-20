@@ -1,4 +1,4 @@
-﻿"""
+"""
 WebSocket 连接器：连接 OneBot 11 客户端（正向 / 反向两种模式）
 
 设计要点（相对旧版修正）：
@@ -23,6 +23,7 @@ import websockets
 from websockets.sync.client import connect
 from websockets.sync.server import serve
 from config import LoadConfig
+from localization import t
 
 from clr import *
 
@@ -76,13 +77,13 @@ def _on_message(raw: str):
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
-        LogColored("[WebSocket] JSON 解析错误:", e,Fore.RED)
+        LogColored("[WebSocket] " + t("cc.json_parse_error") + ":", e,Fore.RED)
         return
     if _event_handler is not None:
         try:
             _event_handler(data)
         except Exception as e:  # 处理器异常不能杀死 WS 线程
-            LogColored("[WebSocket] 事件处理器异常:", e,Fore.RED)
+            LogColored("[WebSocket] " + t("cc.handler_error") + ":", e,Fore.RED)
 
 
 def _drain_send_queue(ws) -> None:
@@ -90,7 +91,7 @@ def _drain_send_queue(ws) -> None:
     while not send_queue.empty():
         try:
             message = send_queue.get_nowait()
-            LogColored(f"[WebSocket]发送{Fore.RESET}{message}",Fore.LIGHTCYAN_EX)
+            LogColored(f"[WebSocket] {t('cc.send')}{Fore.RESET}{message}",Fore.LIGHTCYAN_EX)
             
         except queue.Empty:
             break
@@ -106,7 +107,7 @@ def _recv_loop(ws, poll_interval: float = 0.05) -> None:
         except TimeoutError:
             continue  # 超时没消息，继续轮询
         except websockets.exceptions.ConnectionClosed:
-            LogColored("[WebSocket] 连接已关闭",Fore.YELLOW)
+            LogColored("[WebSocket] " + t("cc.connection_closed"),Fore.YELLOW)
             return
         _on_message(raw)
 
@@ -126,15 +127,15 @@ def _client_loop():
     headers['X-Self-ID'] = str(LoadConfig().get('account_id', '10001'))
     while True:
         try:
-            LogColored("[WebSocket] 连接", serverUrl,Fore.RESET)
+            LogColored("[WebSocket] " + t("cc.connecting"), serverUrl,Fore.RESET)
             # print(headers)
             with connect(serverUrl, additional_headers=headers, max_size=None) as ws:
                 
-                LogColored("[WebSocket] 已连接",Fore.RESET)
+                LogColored("[WebSocket] " + t("cc.connected"),Fore.RESET)
                 _recv_loop(ws)
         except Exception as e:
-            LogColored("[WebSocket] 连接失败:", e,Fore.RED)
-        LogColored(f"[WebSocket] {reconnect_interval}s 后重连 ...",Fore.LIGHTRED_EX)
+            LogColored("[WebSocket] " + t("cc.connect_failed") + ":", e,Fore.RED)
+        LogColored(f"[WebSocket] {t('cc.reconnect', seconds=reconnect_interval)}",Fore.LIGHTRED_EX)
         time.sleep(reconnect_interval)
 
 
@@ -182,7 +183,7 @@ def _handle_client(ws):
         remote = ws.remote_address
     except Exception:
         remote = "unknown"
-    LogColored("[WebSocket] 客户端连接:", remote,Fore.LIGHTGREEN_EX)
+    LogColored("[WebSocket] " + t("cc.client_connected") + ":", remote,Fore.LIGHTGREEN_EX)
     connected_clients.append(ws)
     stop_heartbeat = _start_heartbeat(ws)
     try:
@@ -191,13 +192,13 @@ def _handle_client(ws):
         stop_heartbeat.set()
         if ws in connected_clients:
             connected_clients.remove(ws)
-        LogColored("[WebSocket] 客户端断开:", remote,Fore.LIGHTBLUE_EX)
+        LogColored("[WebSocket] " + t("cc.client_disconnected") + ":", remote,Fore.LIGHTBLUE_EX)
 
 
 def _server_loop():
     host, port = serverUrl.split(':')[1:]
     host='ws:'+host
-    LogColored("[WebSocket] 反向服务器启动:", host, port,Fore.LIGHTGREEN_EX)
+    LogColored("[WebSocket] " + t("cc.reverse_server_start") + ":", host, port,Fore.LIGHTGREEN_EX)
     with serve(_handle_client, "localhost", int(port), max_size=None) as server:
         server.serve_forever()
 
@@ -209,7 +210,7 @@ def _server_loop():
 def SendMessage(message: dict) -> None:
     """发送一条消息（立即入队返回，不阻塞调用线程）"""
     send_queue.put(message)
-    LogColored("[WebSocket]添加到了消息队列",Fore.LIGHTGREEN_EX)
+    LogColored("[WebSocket] " + t("cc.queued"),Fore.LIGHTGREEN_EX)
 
 
 def SendMessageString(message: str) -> None:
@@ -217,7 +218,7 @@ def SendMessageString(message: str) -> None:
     try:
         send_queue.put(json.loads(message))
     except json.JSONDecodeError:
-        LogColored("[WebSocket] SendMessageString: 非法 JSON", message[:100],Fore.RED)
+        LogColored("[WebSocket] " + t("cc.invalid_json"), message[:100],Fore.RED)
 
 
 websocketSendMessage = SendMessageString  # 兼容旧命名
@@ -251,7 +252,7 @@ def start() -> threading.Thread:
     target = _server_loop if reverse else _client_loop
     _thread = threading.Thread(target=target, daemon=True, name="websocket-connector")
     _thread.start()
-    LogColored("[WebSocket] 线程已启动（", "反向" if reverse else "正向", "模式）",Fore.YELLOW)
+    LogColored("[WebSocket] " + t("cc.thread_started", mode=t("cc.mode_reverse") if reverse else t("cc.mode_forward")),Fore.YELLOW)
     return _thread
 
 

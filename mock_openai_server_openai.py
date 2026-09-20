@@ -1,6 +1,7 @@
 # mock_openai_server_flask.py
 from flask import Flask, request, jsonify
 import json
+from localization import t
 
 app = Flask(__name__)
 
@@ -17,7 +18,7 @@ def mock_chat_completions():
 
     # 调试输出
     print("\n" + "="*70)
-    print("🟢 收到 OpenAI API 请求")
+    print(t("mock.received"))
     print("="*70)
     print("Headers:")
     for k, v in headers.items():
@@ -41,7 +42,7 @@ def mock_chat_completions():
                 "index": 0,
                 "message": {
                     "role": "assistant",
-                    "content": "✅ 这是来自 Flask Mock OpenAI 服务器的测试回复。你的请求结构正确！",
+                    "content": t("mock.reply"),
                     
                     "images": [
                             {
@@ -74,10 +75,10 @@ def home():
 
 
 if __name__ == '__main__':
-    print("🚀 启动 Flask Mock OpenAI 服务器...")
-    print("监听地址: http://localhost:8000/v1/chat/completions")
-    print("请在 config.ini 中设置:")
+    print(t("mock.starting"))
+    print(t("mock.listen") + ": http://localhost:8000/v1/chat/completions")
+    print(t("mock.config_hint"))
     print("  server_url = http://localhost:8000/v1")
-    print("  API_KEY = 任意值（如 test-key）")
-    print("\n等待请求中...（按 Ctrl+C 停止）\n")
+    print("  " + t("mock.api_key_hint"))
+    print("\n" + t("mock.waiting") + "\n")
     app.run(host='127.0.0.1', port=8000, debug=False)

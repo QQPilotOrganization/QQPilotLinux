@@ -3,6 +3,7 @@ import base64
 import io
 from PIL import Image
 import log2
+from localization import t
 
 
 def CompressImage(base64src: str, quality: int = 60, max_width: int = 800) -> str:
@@ -21,5 +22,5 @@ def CompressImage(base64src: str, quality: int = 60, max_width: int = 800) -> st
         compressed = base64.b64encode(result.getvalue()).decode('utf-8')
         return f"data:image/jpeg;base64,{compressed}"
     except Exception as e:
-        log2.LogColored("[Compres] 错误"+str(e),log2.Fore.YELLOW)
+        log2.LogColored(t("cc.compress_error")+str(e),log2.Fore.YELLOW)
         return base64srcDuplicated

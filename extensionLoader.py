@@ -3,6 +3,7 @@ import os
 from colorama import Fore
 from typing import List,Any
 from chatContent import ChatContent
+from localization import t
 import logging
 extensions=[]
 extension_names=[]
@@ -17,14 +18,14 @@ for mod in os.listdir('Extensions'):
     if mod.endswith('.py'):
         if not warn:
             warn=True
-            print(f"{Fore.YELLOW}随意加载扩展可能导致运行缓慢，程序故障，甚至有可能破坏文件{Fore.RESET}")
-        print(f"正在加载\t{mod}",end='\r')
+            print(f"{Fore.YELLOW}{t('extension.warning_risky')}{Fore.RESET}")
+        print(f"{t('extension.loading')}\t{mod}",end='\r')
         try:
             extension_names.append(mod[:-3])
             extensions.append(importlib.import_module('Extensions.'+mod[:-3]))
-            print(f"{Fore.GREEN}_已加载\t\t{mod}{Fore.RESET}\t{extensions[-1].description.replace('\n','')}")
+            print(f"{Fore.GREEN}_{t('extension.loaded')}\t\t{mod}{Fore.RESET}\t{extensions[-1].description.replace('\n','')}")
         except Exception as e:
-            print(f'{Fore.YELLOW}加载错误\t{mod}\t{e}{Fore.RESET}')
+            print(f'{Fore.YELLOW}{t("extension.load_error")}\t{mod}\t{e}{Fore.RESET}')
 print()
 print()
 print()

@@ -1,5 +1,6 @@
 import threading
 from time import sleep,time
+from localization import t
 
 loading=False
 startTime=0
@@ -39,17 +40,17 @@ def startLoading(color,text):
     startTime=time()
 
     loading=True
-    t=threading.Thread(target=load,args=(color,text))
-    t.start()
+    thread=threading.Thread(target=load,args=(color,text))
+    thread.start()
 
 def stopLoading():
     global loading,startTime
     loading=False
-    print(f'\n用时:{time()-startTime:.2f}s')
+    print(f'\n{t("default.loading.elapsed")}:{time()-startTime:.2f}s')
     print('\n')
     
 
 if __name__=='__main__':
-    startLoading('','加载中...')
+    startLoading('',t("loading.text"))
     sleep(12)
     stopLoading()
