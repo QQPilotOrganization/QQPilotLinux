@@ -1,1 +1,1 @@
-./PythonPath.sh ScreenshotToUILayout.py
+uv run ScreenshotToUILayout.py
