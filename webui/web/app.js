@@ -562,6 +562,8 @@
 
       function collect() {
         const on = (key) => !!(refs[key] && refs[key].input && refs[key].input.checked);
+        // alert(refs.api_key)
+        // alert(refs.api_key.value)
         // alert( refs.sleep.value.trim())
         return {
           name: refs.name.value.trim(),
@@ -574,7 +576,7 @@
           isvisionmodel: on("isvisionmodel"),
           server_mode: state.config.server_mode,
           custom_server_url: refs.custom_server_url.value.trim(),
-          api_key: refs.api_key.value,
+          api_key: refs.api_key.childNodes[0].value,
           forceollamaapi: on("forceollamaapi"),
           remote_server_timeout: refs.remote_server_timeout.value.trim(),
           withimage: on("withimage"),
@@ -586,7 +588,8 @@
           websocket_server: refs.websocket_server.value.trim(),
           account_id: refs.account_id.value.trim(),
           reverse: on("reverse"),
-          sleep: refs.sleep.value.trim()
+          sleep: refs.sleep.value.trim(),
+          // test:refs.api_key
         };
       }
 

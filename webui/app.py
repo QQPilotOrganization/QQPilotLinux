@@ -280,14 +280,15 @@ class Api:
 
         def put(key: str, value: Any) -> None:
             general[key] = str(value)
-
+        # print(payload)
+        
         put("name", payload.get("name", ""))
         put("width", str(payload.get("width", "")).strip())
         put("height", str(payload.get("height", "")).strip())
         put("maximagecount", str(payload.get("maximagecount", "")).strip())
         put("modelname", payload.get("modelname", ""))
         put("isvisionmodel", bool(payload.get("isvisionmodel")))
-        put("api_key", payload.get("api_key", ""))
+        put("api_key", payload.get("api_key", "1234"))
         put("forceollamaapi", bool(payload.get("forceollamaapi")))
         put("scroll", str(payload.get("scroll", "")).strip())
         put("withimage", bool(payload.get("withimage")))
@@ -302,6 +303,7 @@ class Api:
         put("account_id", str(payload.get("account_id", "")).strip())
         put("reverse", bool(payload.get("reverse")))
         put("sleep", payload.get("sleep"))
+        # print(payload.get("test",""))
 
         if server_mode == "custom":
             put("server_url", custom_url or "custom")
