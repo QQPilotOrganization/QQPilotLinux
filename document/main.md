@@ -4,6 +4,11 @@
 
 ###### 适用于带有 **图形桌面环境** 的 Linux 系统（如 xfce4 等）。纯窗口管理器（如 i3、dwm）未经测试，可能无法正常运行。
 
+> 
+>
+> 2.0外观大重构，并带来了新的看板娘 鱼板 FishCake！同时还有内置Onebot协议和风鼠轨迹模拟。
+> 
+>
 
 # 由于 pyautogui 不支持 ![s](ODF.png) **[Wayland](Wayland.md)**，请在 X11 下运行。
 
@@ -38,24 +43,35 @@ FishCakeQQ 是一个全自动的 QQ 聊天机器人，通过以下流程实现�
 
 ## 特性
 
-- **纯视觉自动化**：截图 + 模板匹配 + 剪贴板，不碰 QQ 协议。
-- **窗口自动化**：驱动鼠标键盘完成选取、复制、粘贴、发送。
-- **多种后端**：本地 Ollama、内置轻量模型、任意 OpenAI 兼容接口，或直接接入 OneBot 机器人。
-- **可扩展**：`Extensions/` 下的 Python 文件可以在收消息、截图后、发送前挂载自己的逻辑。
-- **图形界面**：设置、扩展、升级、图片导入等在同一个 pywebview 网页界面里完成。
-- **可本地化**：全部界面与日志文案走 `localization/`，方便翻译成其它语言。
+![alt text](ODF.png)  **纯视觉自动化**：截图 + 模板匹配 + 剪贴板，不碰 QQ 协议。
+
+![alt text](ODF.png) **窗口自动化**：驱动鼠标键盘完成选取、复制、粘贴、发送。
+
+![alt text](ODF.png)  **多种后端**：本地 Ollama、内置轻量模型、任意 OpenAI 兼容接口，或直接接入 OneBot 机器人。
+
+![alt text](ODF.png)  **可扩展**：`Extensions/` 下的 Python 文件可以在收消息、截图后、发送前挂载自己的逻辑。
+
+![alt text](ODF.png)  **图形界面**：设置、扩展、升级、图片导入等在同一个 pywebview 网页界面里完成。
+
+![alt text](ODF.png)  **可本地化**：全部界面与日志文案走 `localization/`，方便翻译成其它语言。
+
 
 ## 推荐配置
 
-- 1920×1080 分辨率
-- 8 GB RAM
-- 4 GB 磁盘
-- 至少一个桌面环境（Cinnamon、Xfce4、KDE、GNOME、Mate、LXQt 等）
+![alt text](ODF.png)  1920×1080 分辨率
+
+![alt text](ODF.png)  8 GB RAM
+
+![alt text](ODF.png)  4 GB 磁盘
+
+![alt text](ODF.png)  至少一个桌面环境（Cinnamon、Xfce4、KDE、GNOME、Mate、LXQt 等）
 
 ## 快速开始
 
 ```bash
 git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
+#gitee
+#git clone https://gitee.com/Na2Cr2O7/QQPilotLinux.git
 cd FishCakeQQLinux
 sudo apt install xclip
 sudo apt install python3-tk python3-xlib
@@ -73,8 +89,10 @@ uv sync            # 安装依赖（含 pywebview[qt]）
 
 本软件 **仅限技术学习与研究用途**，严禁用于：
 
-- 自动骚扰、刷屏、诈骗等恶意行为
-- 违反《QQ 软件许可协议》的操作
-- 任何违法违规场景
+![alt text](ODF.png)  自动骚扰、刷屏、诈骗等恶意行为
+
+![alt text](ODF.png)  违反《QQ 软件许可协议》的操作
+
+![alt text](ODF.png)  任何违法违规场景
 
 使用者须自行承担因使用本软件引发的一切法律责任，作者概不负责。

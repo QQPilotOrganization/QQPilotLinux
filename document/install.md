@@ -73,6 +73,8 @@ uv python list        # 确认 3.14 已安装
 
 ```bash
 git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
+#gitee
+#git clone https://gitee.com/Na2Cr2O7/QQPilotLinux.git
 cd FishCakeQQLinux
 chmod +x ./*.sh      # 让 run.sh / menu.sh 等可执行
 ```

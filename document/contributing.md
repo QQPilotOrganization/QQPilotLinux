@@ -12,6 +12,8 @@
 
 ```bash
 git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
+#gitee
+#git clone https://gitee.com/Na2Cr2O7/QQPilotLinux.git
 cd FishCakeQQLinux
 uv venv ./venv
 uv sync              # 安装全部依赖（含 pywebview[qt]）

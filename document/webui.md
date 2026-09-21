@@ -10,7 +10,7 @@ FishCakeQQ 的设置、扩展管理、升级、图片导入等整合在**一个�
 ```bash
 ./menu.sh        # 等价于 uv run menu.py
 ```
-
+![alt text](image.png)
 ---
 
 ## 为什么是网页

@@ -31,12 +31,12 @@ uv pip install "pywebview[gtk]"
 
 ---
 
-## 一启动就提示 Wayland
+## 一启动就提示 ![alt text](ODF.png) Wayland
 
-**症状**：日志出现 `wayland下可能无法正常使用`。
+**症状**：日志出现 `![alt text](ODF.png) wayland下可能无法正常使用`。
 
 `pyautogui` 依赖 X11 的坐标与输入模型，Wayland 下无法工作。
-请在登录界面选择 **X11 / Xorg** 会话，详见 [Wayland](Wayland.md)。
+请在登录界面选择 **X11 / Xorg** 会话，详见 [![alt text](ODF.png) Wayland](Wayland.md)。
 
 ---
 
