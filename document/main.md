@@ -55,7 +55,7 @@ FishCakeQQ 是一个全自动的 QQ 聊天机器人，通过以下流程实现�
 ## 快速开始
 
 ```bash
-git clone https://github.com/FishCakeQQOrganization/FishCakeQQLinux.git
+git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
 cd FishCakeQQLinux
 sudo apt install xclip
 sudo apt install python3-tk python3-xlib

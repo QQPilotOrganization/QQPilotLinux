@@ -11,7 +11,7 @@
 ## 开发环境
 
 ```bash
-git clone https://github.com/FishCakeQQOrganization/FishCakeQQLinux.git
+git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
 cd FishCakeQQLinux
 uv venv ./venv
 uv sync              # 安装全部依赖（含 pywebview[qt]）

@@ -72,7 +72,7 @@ uv python list        # 确认 3.14 已安装
 ## 4. 获取 FishCakeQQ
 
 ```bash
-git clone https://github.com/FishCakeQQOrganization/FishCakeQQLinux.git
+git clone https://github.com/QQPilotOrganization/QQPilotLinux.git
 cd FishCakeQQLinux
 chmod +x ./*.sh      # 让 run.sh / menu.sh 等可执行
 ```
