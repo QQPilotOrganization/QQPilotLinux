@@ -11,8 +11,8 @@ from localization import t
 
 # Initialize the controller
 mouse = PyautoguiMouseController(    
-    max_step=55,            # Maximum speed (default: 15)
-    damped_distance=12      # Distance where movement starts to slow (default: 12)
+    max_step=90,            # Maximum speed (default: 15)
+    damped_distance=90   ,   # Distance where movement starts to slow (default: 12)
     )
 
 # Set destination coordinates
@@ -21,7 +21,7 @@ def smoothMoveStart():
     global mouse
     mouse.move_to_target(
         tick_delay=0,      
-        step_duration=0.001     
+        step_duration=0     
     )
 from colorama import Fore
 # from conversationStyleExtract import indentificationString
@@ -32,18 +32,31 @@ autoFocusing=config.getboolean('general','autoFocusing')
 width=config.getint('general','width')
 height=config.getint('general','height')
 wmctrlsh='''#!/bin/bash
+# qq-move.sh
+# 将标题 == qq（不区分大小写）的窗口移动到 (0,0)，大小 1285x720，并激活到最前
+TARGET="qq"
+GEO="0,0,0,WIDTH,HEIGHT"  
 
+# ---- 查找窗口 ----
+wid=""
 while IFS= read -r line; do
-    [[ -n "$line" ]] || continue
-    
-    win_id=${line%% *}
-    
-    win_title=$(echo "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
-    
-    if [[ "${win_title,,}" == "qq" ]]; then
-        wmctrl -i -r "$win_id" -e 0,0,0,WIDTH,HEIGHT
+    id=$(awk '{print $1}' <<<"$line")
+    title=$(awk '{for(i=4;i<=NF;i++) printf "%s%s", $i, (i<NF?" ":"")}' <<<"$line")
+    if [ "${title,,}" = "${TARGET,,}" ]; then
+        wid="$id"
+        break
     fi
 done < <(wmctrl -l)
+
+if [ -z "$wid" ]; then
+    echo "未找到标题为 '$TARGET' 的窗口" >&2
+    exit 2
+fi
+# ---- 移动 + 调整大小 ----
+wmctrl -i -r "$wid" -e "$GEO"
+
+# ---- 激活到最前 ----
+wmctrl -i -a "$wid"
 '''
 sh=wmctrlsh.replace('WIDTH',str(width))
 sh=sh.replace('HEIGHT',str(height))
@@ -61,10 +74,11 @@ def focus():
     subprocess.run(['bash','./left.sh'])
 
 def mouse_move(x: int, y: int) -> bool:
-    # pyautogui.moveTo(x, y)
     global mouse
     mouse.dest_position = (Coordinate(x), Coordinate(y))
+    mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
     smoothMoveStart()
+    # pyautogui.moveTo(x, y)
     
     return True
 def mouse_down() -> bool:
@@ -76,6 +90,7 @@ def mouse_up() -> bool:
     return True
 
 def click(x: int, y: int) -> bool:
+    mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
     mouse.dest_position = (Coordinate(x), Coordinate(y))
     smoothMoveStart()
     pyautogui.click(x, y)
@@ -147,10 +162,10 @@ def goto(x: int, y: int)-> bool:
     """
     mouse_move(x, y)
     return True
-def getCenter(area: tuple[int, int, int, int]) -> tuple[int, int]:
-    area2=list(area)
-    pos1=area2[0]+((area2[3]-area2[1]) // 2)
-    pos2=area2[1]+((area2[4]-area2[2]) // 2)
+def getCenter(areaxywh: tuple[int, int, int, int]) -> tuple[int, int]:
+    area2=list(areaxywh)
+    pos1=area2[0]+((area2[2]-area2[0]) // 2)
+    pos2=area2[1]+((area2[3]-area2[1]) // 2)
     return pos1,pos2
 def clickCenter(area):
     click(*getCenter(area))
@@ -164,12 +179,13 @@ def PasteTextToSection(text:str,section: tuple[int, int, int, int]):
     time.sleep(0.8)
     
 def SendText(text:str,section: tuple[int, int, int, int]):
-    temp=''
     print(Fore.GREEN, t("gui.send_message") + text)
 
+    clickCenter(section)
     for message in text.split("[[NEXT]]"):
         m=message.split("\n")
         for sentence in m[:-1]:
+            print(sentence)
             PasteTextToSection(sentence,section)
             # clickCenter(section)
             press("enter")
@@ -179,8 +195,7 @@ def SendText(text:str,section: tuple[int, int, int, int]):
             # # click(commentSectionActualSize)
             # hotkey('ctrl', 'v')
         PasteTextToSection(m[-1],section)
-        clickCenter(section)
-        time.sleep(200)
+        time.sleep(0.2)
         HotKey('ctrl','enter')
             
     # for i in text:

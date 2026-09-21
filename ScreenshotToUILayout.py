@@ -196,12 +196,8 @@ if __name__ == '__main__':
                 click(chatListActualSize[0]+int(100*scale),chatListActualSize[1]+int(20*scale))
                 time.sleep(0.1)
 
-                click(*contactButtonActualPosition)
-                time.sleep(0.1)
-                click(*chatButtonActualPosition)
-                time.sleep(1)
                 image.fullScreenShot()
-                time.sleep(1.5)
+                time.sleep(2.5)
                 count+=1
                 if(count>2):
                     break
@@ -211,7 +207,7 @@ if __name__ == '__main__':
                 pointsOfUpload=Vision.FindTemplates("screenshot.png",'uploadImage.png',30,1)
                 logger.info(pointsOfUpload)
                 
-                if(len(pointsOfUpload)>1):
+                if(len(pointsOfUpload)>=1):
                     time.sleep(1.5)
                     continue
                 
@@ -219,7 +215,7 @@ if __name__ == '__main__':
                 pointsOfCopy=Vision.FindTemplates("screenshot.png",'copy.png',30,1)
                 logger.info(pointsOfCopy)
                 
-                if len(pointsOfCopy)>1:
+                if len(pointsOfCopy)>=1:
                     time.sleep(1.5)
                     
                     continue
@@ -227,7 +223,7 @@ if __name__ == '__main__':
 
                 break
             
-            for _ in tqdm.trange(0,sleep2,desc=t("info.wait")):
+            for _ in tqdm.trange(0,sleep2,desc=t("info.wait")+Fore.CYAN):
                 time.sleep(1)
         def CleanInputSection():
             HotKey('ctrl','a')
@@ -421,16 +417,17 @@ if __name__ == '__main__':
 
                     # click "send" button
                     time.sleep(2)
-                    logger.info(t("info.sent_message"))
+                    logger.info(t("info.sent_message")+Fore.RESET)
                     HotKey('ctrl','enter')
-                    dockLog.setText(t("docklog.sent_message"))
+                    time.sleep(2)
+                    dockLog.setText(t("docklog.sent_message")+Fore.RESET)
                     # click(sendButtonActualSize[0]+((sendButtonActualSize[2]-sendButtonActualSize[0])//2)
                     #         ,sendButtonActualSize[1]+((sendButtonActualSize[3]-sendButtonActualSize[1])//2))
                     
                     time.sleep(.1)
 
                     # exit conversation
-                    logger.info(t("info.quit_conversation"))
+                    logger.info(t("info.quit_conversation")+Fore.RESET)
                     CleanInputSection()
                     GoBack()
                 # else:

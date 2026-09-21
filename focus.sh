@@ -1,18 +1,12 @@
 #!/bin/bash
+# 仅将标题== qq（不区分大小写）的窗口置于最前（激活）
 
-# 仅将标题含 qq（不区分大小写）的窗口置于最前（激活）
-wmctrl -l | while read -r line; do
+TARGET="qq"
 
-     || continue
-
-    # 提取窗口 ID
-    win_id=$(echo "$line" | awk '{print $1}')
-
-    # 提取窗口标题（去掉前两列：ID 和 主机名）
-    win_title=$(echo "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
-
-    # 判断标题是否完全等于 qq (忽略大小写)
-    if ; then
-        wmctrl -i -a "$win_id"
+# 获取窗口列表，格式：0x03a00007  0 hostname 窗口标题
+wmctrl -l | while read -r id _ _ title; do
+    # 去空格后做不区分大小写比较
+    if [ "${title,,}" = "$TARGET" ]; then
+        wmctrl -i -a "$id"
     fi
 done

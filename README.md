@@ -12,6 +12,10 @@
 [文档](document/main.md) |
 [Windows版本](https://github.com/QQPilotOrganization/QQPilot) | 
 [Android版本](https://github.com/QQPilotOrganization/QQPilotPocketEdition)
+<div align="center">
+<img alt="示例截图" src="./assets/running.png" width="520" >
+</div> 
+
 
 <!-- 
 ## 1.5.15
