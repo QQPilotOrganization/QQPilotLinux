@@ -4,36 +4,36 @@
 
 [← 返回目录](main.md)
 
-**FishCakeQQ 必须在 X11 下运行，![alt text](ODF.png)Wayland 会话下无法工作。**
+**FishCakeQQ 必须在 X11 下运行，![alt text](ODF.png)会话下无法工作。**
 
 ---
 
-## ![alt text](ODF.png)Wayland 是什么
+## ![alt text](ODF.png) 是什么
 
-![alt text](ODF.png)Wayland 是 X11 窗口系统协议的替代方案，目标更简单、更易开发与维护。
+![alt text](ODF.png) 是 X11 窗口系统协议的替代方案，目标更简单、更易开发与维护。
 
-- 应用（Wayland 客户端）通过 **![alt text](ODF.png)libwayland** 与 **compositor**（合成器）通信，
+- 应用（![alt text](ODF.png) 客户端）通过 **lib![alt text](ODF.png)** 与 **compositor**（合成器）通信，
   由合成器负责显示与输入。
-- 与 X11 不同，![alt text](ODF.png)Wayland 没有唯一的服务端：每个桌面环境（GNOME、KDE…）
+- 与 X11 不同，![alt text](ODF.png) 没有唯一的服务端：每个桌面环境（GNOME、KDE…）
   自带各自的合成器实现，窗口管理与交互行为更多由合成器决定。
 
 更多资料：
 
-- ![alt text](ODF.png)架构与 FAQ：<https://wayland.freedesktop.org/>
-- ![alt text](ODF.png)协议与实现：<https://gitlab.freedesktop.org/wayland/wayland>
+- ![alt text](ODF.png)架构与 FAQ：[https://![alt text](ODF.png).freedesktop.org/](https://wayland.freedesktop.org/)
+- ![alt text](ODF.png)协议与实现：[https://gitlab.freedesktop.org/ ![alt text](ODF.png) /![alt text](ODF.png)](https://gitlab.freedesktop.org/wayland/wayland)
 
 ---
 
-## 为什么 FishCakeQQ 用不了 ![alt text](ODF.png)Wayland
+## 为什么 FishCakeQQ 用不了 ![alt text](ODF.png)
 
 FishCakeQQ 依赖两条 X11 时代的能力：
 
 1. **绝对坐标的鼠标控制**：`pyautogui` 通过 X11 直接把指针移动到屏幕坐标并点击。
-   ![alt text](ODF.png)Wayland 出于安全考虑**不允许客户端设置全局光标位置**，移动会失败或落在错误位置。
+   ![alt text](ODF.png)出于安全考虑**不允许客户端设置全局光标位置**，移动会失败或。
 2. **窗口直接操作**：程序用 `wmctrl` 查找并移动标题为 `qq` 的窗口。
-   Wayland 下 `wmctrl` 通常看不到真实窗口，也无法移动它们。
+  ![alt text](ODF.png) 下 `wmctrl` 通常看不到真实窗口，也无法移动它们。
 
-因此 FishCakeQQ 在 ![alt text](ODF.png)Wayland 下会表现为：鼠标不动、~~点击错位~~、找不到窗口。
+因此 FishCakeQQ 在 ![alt text](ODF.png) 下会表现为：鼠标不动、~~点击错位~~、找不到窗口。
 
 ---
 
@@ -51,13 +51,13 @@ FishCakeQQ 依赖两条 X11 时代的能力：
 
 > 部分发行版默认隐藏 X11 会话；可在 `~/.config` 或登录管理器设置里开启。
 
->推荐使用Linux Mint 或者LMDE。默认为x11会话。
+> ## 推荐使用Linux Mint 或者LMDE。默认为x11会话。
 
 ---
 
 ## 常见追问
 
-**Q：能不能把 FishCakeQQ 改成支持![alt text](ODF.png) Wayland？**
+**Q：能不能把 FishCakeQQ 改成支持**![alt text](ODF.png) ?
 A：需要改用 `ydotool` / `libei` 之类需要特权或额外守护进程的输入方案，
 并且窗口管理也无法用 `wmctrl`，属于另一套实现，目前没兴趣支持。
 
@@ -66,7 +66,7 @@ A：WSL 的图形转发同样不是 X11 桌面环境，鼠标与窗口都不具�
 请直接用 Windows 版或安装真正的 Linux 桌面。
 
 **Q：远程桌面（VNC / RDP）呢？**
-A：只要远端会话本身是 X11，一般可用；纯 ![alt text](ODF.png)Wayland 的远程会话仍不行。
+A：只要远端会话本身是 X11，一般可用；纯 ![alt text](ODF.png)的远程会话仍不行。
 
 [← 返回目录](main.md)
 

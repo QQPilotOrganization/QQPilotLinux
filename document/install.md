@@ -1,4 +1,4 @@
-<img alt="FishCakeQQ" src="../assets/FishCake.png" width="100">
+<img src="../assets/UPDATE.png" width=100>
 
 # 安装
 

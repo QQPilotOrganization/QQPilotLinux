@@ -1,17 +1,14 @@
-<img alt="FishCakeQQ" src="../assets/FishCake.png" width="100">
-
 # 架构说明
 
 [← 返回目录](main.md)
 
-面向想读源码 / 改源码的人。先说清楚“哪个文件干什么”，再说数据怎么流动。
 
 ---
 
 ## 目录结构
 
 ```
-FishCakeQQLinux/
+/
 ├─ ScreenshotToUILayout.py   主程序：整个自动回复循环
 ├─ menu.py                   图形界面入口（webui）
 ├─ positions.py              UI 相对坐标与换算

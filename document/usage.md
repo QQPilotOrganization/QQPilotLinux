@@ -1,12 +1,9 @@
-<img alt="FishCakeQQ" src="../assets/FishCake.png" width="100">
 
 # 使用
 
 [← 返回目录](main.md)
 
-本篇讲清楚 FishCakeQQ 怎么跑、跑到哪里、每一步在做什么。
 
----
 
 ## 1. 启动顺序
 
@@ -19,7 +16,7 @@
 
 启动前请确认：
 
-- 处于 **X11** 会话（登录界面选择 “GNOME on Xorg” 等）；
+- 处于 ****X11**** 会话（登录界面选择 “GNOME on Xorg” 等）；[为什么不能是![alt text](ODF.png)Wayland](Wayland.md)
 - QQ 已登录；
 - 系统显示缩放 100%、QQ 使用浅色主题（见 [安装](install.md#2-安装并设置-qq-for-linux)）。
 

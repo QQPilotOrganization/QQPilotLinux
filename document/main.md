@@ -4,7 +4,10 @@
 
 ###### 适用于带有 **图形桌面环境** 的 Linux 系统（如 xfce4 等）。纯窗口管理器（如 i3、dwm）未经测试，可能无法正常运行。
 
+
 # 由于 pyautogui 不支持 ![s](ODF.png) **[Wayland](Wayland.md)**，请在 X11 下运行。
+
+> 推荐使用LMDE。
 
 FishCakeQQ 是一个全自动的 QQ 聊天机器人，通过以下流程实现智能回复：
 
@@ -26,7 +29,7 @@ FishCakeQQ 是一个全自动的 QQ 聊天机器人，通过以下流程实现�
 | [扩展开发](extensions.md) | 扩展模板、钩子函数、扩展 API、启用与停用 |
 | [本地化](localization.md) | 多语言机制、新增文案与语言、自检工具 |
 | [排错指南](troubleshooting.md) | 常见问题与排查步骤 |
-| [Wayland](Wayland.md) | 为什么必须在 X11 下运行 |
+| ![alt text](ODF.png)[Wayland](Wayland.md) | 为什么必须在 X11 下运行 |
 | [架构说明](architecture.md) | 目录结构、模块职责与数据流（开发者） |
 | [贡献指南](contributing.md) | 开发环境、代码规范、提交与发布（开发者） |
 | [角色设定](../characterset.md) | 看板娘「鱼板 FishCake」的外观、性格与台词 |
@@ -47,7 +50,7 @@ FishCakeQQ 是一个全自动的 QQ 聊天机器人，通过以下流程实现�
 - 1920×1080 分辨率
 - 8 GB RAM
 - 4 GB 磁盘
-- 至少一个桌面环境（Xfce4、KDE、GNOME、Cinnamon、Mate、LXQt 等）
+- 至少一个桌面环境（Cinnamon、Xfce4、KDE、GNOME、Mate、LXQt 等）
 
 ## 快速开始
 

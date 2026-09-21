@@ -1,5 +1,3 @@
-<img alt="FishCakeQQ" src="../assets/FishCake.png" width="100">
-
 # 排错指南
 
 [← 返回目录](main.md)

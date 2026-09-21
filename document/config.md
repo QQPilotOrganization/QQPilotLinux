@@ -1,4 +1,4 @@
-<img alt="FishCakeQQ" src="../assets/FishCake.png" width="100">
+<img src="../assets/option.png" width=100>
 
 # 配置详解
 
