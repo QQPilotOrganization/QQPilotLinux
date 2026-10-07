@@ -10,7 +10,7 @@
 </div> 
 
 [文档](document/main.md) |
-[Windows版本](https://github.com/QQPilotOrganization/QQPilot) | 
+[Windows版本](https://github.com/QQPilotOrganization/QQPilot)  [Gitee](https://gitee.com/Na2Cr2O7/QQPilot) | 
 [Android版本](https://github.com/QQPilotOrganization/QQPilotPocketEdition)
 <div align="center">
 <img alt="示例截图" src="./assets/running.png" width="520" >
