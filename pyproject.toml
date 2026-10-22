@@ -1,6 +1,6 @@
 [project]
 name = "qqpilotlinux"
-version = "2.0.1"
+version = "2.1.0"
 description = "使用纯视觉 + 窗口自动化实现 QQ 消息自动回复，零 API 依赖、零注入、低封号风险。"
 readme = "README.md"
 requires-python = ">=3.14"
