@@ -1,6 +1,6 @@
-# 在虚拟机中调用主机上的 Ollama 服务（Windows 主机）
+# 在虚拟机中调用主机上的 Ollama 服务
 
-本教程将指导你如何在虚拟机（如 VMware、VirtualBox 等）中访问运行在 **Windows 主机** 上的 Ollama 服务，从而避免在虚拟机中重复部署模型。
+本教程将指导你如何在虚拟机（如 VMware、VirtualBox 等）中访问运行在 **主机** 上的 Ollama 服务，从而避免在虚拟机中重复部署模型。
 
 适用于VisionQQ/QQPilot 1.5+
 
@@ -16,26 +16,14 @@
 每次需要从虚拟机访问 Ollama 前，请在 **主机** 上执行以下操作：
 
 1. **关闭正在运行的 Ollama 进程**  
-   以管理员身份打开 **命令提示符 (CMD)**，依次执行：
-
-   ```cmd
-   taskkill /F /IM ollama.exe
-   taskkill /F /IM "ollama app.exe"
-   ```
-   或者打开终端
+   打开终端
    ```bash
    sudo systemctl stop ollama
    ```
 
 2. **设置环境变量并启动服务**  
-   在同一个 CMD 窗口中继续输入：
+   在同一个窗口中继续输入：
 
-   ```cmd
-   set OLLAMA_HOST=0.0.0.0
-   set OLLAMA_ORIGINS=*
-   ollama serve
-   ```
-   或者在 Linux 上执行：
    ```bash
    export OLLAMA_HOST=0.0.0.0
    export OLLAMA_ORIGINS=*
@@ -52,9 +40,6 @@
 
 1. 打开一个新的 CMD 窗口（不要关闭上一步的 `ollama serve` 窗口），运行：
 
-   ```cmd
-   ipconfig
-   ```
    ```bash
    ifconfig
    #如果找不到ifconfig，请安装  net-tools
@@ -74,9 +59,9 @@
    http://192.168.31.233:11434
    ```
 
-   或在 CMD / Bash 中执行：
+   或执行：
 
-   ```cmd
+   ```bash
    curl http://192.168.31.233:11434
    ```
 
@@ -113,7 +98,7 @@
 3. **查看可用模型名称**  
    回到主机的 CMD / Bash 中（非虚拟机），运行：
 
-   ```cmd
+   ```bash
    ollama ls
    ```
 
@@ -149,7 +134,7 @@ huihui_ai/deepseek-r1-abliterated:8b    5ae823b61e22    5.8 GB    100% GPU     4
 
 - 🔄 想要持久化配置？
   - 可将环境变量写入系统（通过“系统属性 → 环境变量”），但需注意安全风险。
-  - 更推荐编写一个启动脚本（`.bat` 文件）自动完成 kill + serve 流程。
+  - 更推荐编写一个启动脚本（`.sh` 文件）自动完成 kill + serve 流程。
 
 ---
 

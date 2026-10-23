@@ -149,4 +149,6 @@ reverse = False               ; False=主动连出去；True=本机监听等对�
 | 已经有云端 / 自建 OpenAI 兼容服务 | 自定义 URL |
 | 已经在用 MaiBot 等机器人框架 | `onebot` |
 
+[虚拟机使用宿主机Ollama](../useollamainVM/useOllamainVM.md)
+
 [← 返回目录](main.md)
