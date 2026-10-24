@@ -31,14 +31,11 @@ scroll=config.getint('general','scroll')
 autoFocusing=config.getboolean('general','autoFocusing')
 width=config.getint('general','width')
 height=config.getint('general','height')
-smoothMove=config.getboolean('general','smooth_move')
+mouseSmoothMove=config.getboolean('general','mouse_smooth_move',fallback=False)
 wmctrlsh='''#!/bin/bash
-# qq-move.sh
-# 将标题 == qq（不区分大小写）的窗口移动到 (0,0)，大小 1285x720，并激活到最前
 TARGET="qq"
 GEO="0,0,0,WIDTH,HEIGHT"  
 
-# ---- 查找窗口 ----
 wid=""
 while IFS= read -r line; do
     id=$(awk '{print $1}' <<<"$line")
@@ -50,17 +47,16 @@ while IFS= read -r line; do
 done < <(wmctrl -l)
 
 if [ -z "$wid" ]; then
-    echo "未找到标题为 '$TARGET' 的窗口" >&2
+    echo "WINDOW_NOT_FOUND" >&2
     exit 2
 fi
-# ---- 移动 + 调整大小 ----
 wmctrl -i -r "$wid" -e "$GEO"
 
-# ---- 激活到最前 ----
 wmctrl -i -a "$wid"
 '''
 sh=wmctrlsh.replace('WIDTH',str(width))
 sh=sh.replace('HEIGHT',str(height))
+sh=sh.replace('WINDOW_NOT_FOUND', t("gui.window_not_found", target="$TARGET"))
 with open('left.sh', 'w',encoding='utf8') as f:
     f.write(sh)
 try:
@@ -76,7 +72,7 @@ def focus():
 
 def mouse_move(x: int, y: int) -> bool:
     global mouse
-    if smoothMove:
+    if mouseSmoothMove:
         mouse.dest_position = (Coordinate(x), Coordinate(y))
         mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
         smoothMoveStart()
@@ -93,7 +89,7 @@ def mouse_up() -> bool:
     return True
 
 def click(x: int, y: int) -> bool:
-    if smoothMove:
+    if mouseSmoothMove:
         mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
         mouse.dest_position = (Coordinate(x), Coordinate(y))
         smoothMoveStart()

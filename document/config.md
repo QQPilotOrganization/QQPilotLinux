@@ -26,6 +26,7 @@ autofocusing = False
 sendimagepossibility = 86
 nt_data = None
 atdetect = False
+mouse_smooth_move = False
 tab_times = 8
 remote_server_timeout = 300
 forceollamaapi = False
@@ -113,7 +114,8 @@ scale = 1.00
 |------|------|------|
 | `autologin` | `False` | 启动后自动寻找登录按钮并点击（建议直接开 QQ 的自动登录） |
 | `autofocusing` | `False` | 持续把 QQ 窗口置于最前，避免被别的窗口遮挡 |
-| `sleep` | `2` | 预留字段，当前代码未使用 |
+| `mouse_smooth_move` | `False` | 用曲线动画把指针移到目标（windmouse）；更平滑，但每次点击会稍慢 |
+| `sleep` | `2` | 每条消息发送后额外等待的秒数 |
 
 ## 提示词
 

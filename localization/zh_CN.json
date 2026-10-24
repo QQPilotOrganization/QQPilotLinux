@@ -172,6 +172,8 @@
     "ui.settings.withimage_hint": "把聊天里的图片一起交给模型",
     "ui.settings.atdetect": "只检查 @",
     "ui.settings.atdetect_hint": "只有被 @ 的消息才回复",
+    "ui.settings.mouse_smooth_move": "平滑移动鼠标",
+    "ui.settings.mouse_smooth_move_hint": "用曲线动画移动指针，减少瞬移感；会稍慢一些",
     "ui.settings.sleep":"发送消息后等待（秒）",
     "ui.settings.sleep_hint":"发送消息后休息一段时间",
     "ui.settings.section_model": "模型与服务器",
@@ -326,6 +328,7 @@
     "docklog.window_error": "❌ 窗口运行出错",
     "loading.text": "螺旋转圈中…",
     "gui.send_message": "发消息 →",
+    "gui.window_not_found": "未找到标题为 '{target}' 的窗口",
     "data.done": "√ 数据处理完成",
     "server.missing_text": "缺少字段 'text'",
 

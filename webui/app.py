@@ -57,6 +57,7 @@ DEFAULTS: dict[str, str] = {
     "sendimagepossibility": "40",
     "nt_data": "None",
     "atdetect": "False",
+    "mouse_smooth_move": "False",
     "remote_server_timeout": "300",
     "tab_times": "8",
     "forceollamaapi": "False",
@@ -224,6 +225,7 @@ class Api:
             "autofocusing": _as_bool(_value(parser, "autofocusing")),
             "sendimagepossibility": int(float(_value(parser, "sendimagepossibility") or 0)),
             "atdetect": _as_bool(_value(parser, "atdetect")),
+            "mouse_smooth_move": _as_bool(_value(parser, "mouse_smooth_move")),
             "remote_server_timeout": _value(parser, "remote_server_timeout"),
             "tab_times": _value(parser, "tab_times") or "8",
             "system": _raw(parser, "system"),
@@ -296,6 +298,7 @@ class Api:
         put("autofocusing", bool(payload.get("autofocusing")))
         put("sendimagepossibility", int(possibility))
         put("atdetect", bool(payload.get("atdetect")))
+        put("mouse_smooth_move", bool(payload.get("mouse_smooth_move")))
         put("remote_server_timeout", str(payload.get("remote_server_timeout", "")).strip())
         put("tab_times", tab_times)
         put("system", str(payload.get("system", "")).strip())

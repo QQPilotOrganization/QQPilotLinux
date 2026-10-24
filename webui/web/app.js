@@ -468,10 +468,11 @@
       gRun.append(...row(T("ui.settings.tab_times"), need(select([{ value: "8", label: T("ui.settings.tab_times_option", { n: 8 }) }, { value: "7", label: T("ui.settings.tab_times_option", { n: 7 }) }], cfg.tab_times), "tab_times"), T("ui.settings.tab_times_hint")));
       gRun.append(...row(T("ui.settings.maximage"), need(textInput(cfg.maximagecount, { inputmode: "numeric" }), "maximagecount"), T("ui.settings.maximage_hint")));
       gRun.append(...row(T("ui.settings.sendimagepossibility"), need(rangeControl(cfg.sendimagepossibility), "sendimagepossibility"), T("ui.settings.sendimagepossibility_hint")));
-      gRun.append(...row(T("ui.settings.autologin"), switchControl(cfg.autologin), T("ui.settings.autologin_hint")));
-      gRun.append(...row(T("ui.settings.autofocusing"), switchControl(cfg.autofocusing), T("ui.settings.autofocusing_hint")));
-      gRun.append(...row(T("ui.settings.withimage"), switchControl(cfg.withimage), T("ui.settings.withimage_hint")));
-      gRun.append(...row(T("ui.settings.atdetect"), switchControl(cfg.atdetect), T("ui.settings.atdetect_hint")));
+      gRun.append(...row(T("ui.settings.autologin"), need(switchControl(cfg.autologin), "autologin"), T("ui.settings.autologin_hint")));
+      gRun.append(...row(T("ui.settings.autofocusing"), need(switchControl(cfg.autofocusing), "autofocusing"), T("ui.settings.autofocusing_hint")));
+      gRun.append(...row(T("ui.settings.withimage"), need(switchControl(cfg.withimage), "withimage"), T("ui.settings.withimage_hint")));
+      gRun.append(...row(T("ui.settings.atdetect"), need(switchControl(cfg.atdetect), "atdetect"), T("ui.settings.atdetect_hint")));
+      gRun.append(...row(T("ui.settings.mouse_smooth_move"), need(switchControl(cfg.mouse_smooth_move), "mouse_smooth_move"), T("ui.settings.mouse_smooth_move_hint")));
       gRun.append(...row(T("ui.settings.sleep"), need(textInput(cfg.sleep, { inputmode: "numeric" }), "sleep"), T("ui.settings.sleep_hint")));
 
       sRun.append(gRun);
@@ -480,13 +481,13 @@
       const sModel = section(T("ui.settings.section_model"), T("ui.settings.section_model_desc"));
       const gModel = el("div", { class: "grid" });
       gModel.append(...row(T("ui.settings.modelname"), need(textInput(cfg.modelname), "modelname")));
-      gModel.append(...row(T("ui.settings.vision_model"), switchControl(cfg.isvisionmodel), T("ui.settings.vision_model_hint")));
+      gModel.append(...row(T("ui.settings.vision_model"), need(switchControl(cfg.isvisionmodel), "isvisionmodel"), T("ui.settings.vision_model_hint")));
 
       const customRow = row(T("ui.settings.custom_url"), need(textInput(cfg.custom_server_url, { placeholder: "http://192.168.1.100:8000/v1" }), "custom_server_url"), T("ui.settings.custom_url_hint"));
       const onebotGrid = el("div", { class: "grid" });
       onebotGrid.append(...row(T("ui.settings.ws_server"), need(textInput(cfg.websocket_server), "websocket_server"), T("ui.settings.ws_server_hint")));
       onebotGrid.append(...row(T("ui.settings.account_id"), need(textInput(cfg.account_id), "account_id"), T("ui.settings.account_id_hint")));
-      onebotGrid.append(...row(T("ui.settings.reverse"), switchControl(cfg.reverse), T("ui.settings.reverse_hint")));
+      onebotGrid.append(...row(T("ui.settings.reverse"), need(switchControl(cfg.reverse), "reverse"), T("ui.settings.reverse_hint")));
       const onebotBlock = el(
         "div",
         { class: "section", style: "margin:6px 0 0;padding:18px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent" },
@@ -516,7 +517,7 @@
       gModel.append(...row(T("ui.settings.server"), segmented, T("ui.settings.server_hint")));
       gModel.append(...customRow);
       gModel.append(...row(T("ui.settings.api_key"), need(passwordInput(cfg.api_key), "api_key"), T("ui.settings.api_key_hint")));
-      gModel.append(...row(T("ui.settings.force_ollama"), switchControl(cfg.forceollamaapi), T("ui.settings.force_ollama_hint")));
+      gModel.append(...row(T("ui.settings.force_ollama"), need(switchControl(cfg.forceollamaapi), "forceollamaapi"), T("ui.settings.force_ollama_hint")));
       gModel.append(...row(T("ui.settings.remote_timeout"), need(textInput(cfg.remote_server_timeout, { inputmode: "numeric" }), "remote_server_timeout"), T("ui.settings.remote_timeout_hint")));
       sModel.append(gModel, onebotBlock);
       setMode(cfg.server_mode);
@@ -584,6 +585,7 @@
           autofocusing: on("autofocusing"),
           sendimagepossibility: Number((refs.sendimagepossibility.input || {}).value || 0),
           atdetect: on("atdetect"),
+          mouse_smooth_move: on("mouse_smooth_move"),
           system: refs.system.value,
           websocket_server: refs.websocket_server.value.trim(),
           account_id: refs.account_id.value.trim(),
