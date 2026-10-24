@@ -189,7 +189,7 @@ if __name__ == '__main__':
             with open(TOKENCOUNTFILE,'w',encoding='utf8') as f:
                 f.write("0")
         def GoBack():
-            logger.info("GoBack")
+
             # dockLog.setText(1)
             count=0
             while 1:
@@ -205,7 +205,7 @@ if __name__ == '__main__':
                 
                 
                 pointsOfUpload=Vision.FindTemplates("screenshot.png",'uploadImage.png',30,1)
-                logger.info(pointsOfUpload)
+
                 
                 if(len(pointsOfUpload)>=1):
                     time.sleep(1.5)
@@ -213,7 +213,7 @@ if __name__ == '__main__':
                 
                 
                 pointsOfCopy=Vision.FindTemplates("screenshot.png",'copy.png',30,1)
-                logger.info(pointsOfCopy)
+
                 
                 if len(pointsOfCopy)>=1:
                     time.sleep(1.5)

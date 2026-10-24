@@ -231,8 +231,6 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
             print(f'API Error: {resp.status_code} - {response_body}')
             return None, 0
 
-        print('\n\nResponse:\n')
-        print(response_body)
 
         doc = json.loads(response_body)
 
@@ -250,7 +248,7 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
             print(t("answer.token_usage", input=prompt_tokens, output=completion_tokens, total=total_tokens))
             totalTokens = total_tokens
 
-        # 推理内容（Deepseek reasoning_content / Ollama thinking，对齐 C#）
+        
         try:
             reason = doc.get('choices', [{}])[0].get('message', {}).get('reasoning_content')
             if reason is None:
@@ -258,15 +256,15 @@ def getAnswer(text: List[ChatContent], systemPrompt: str = 'auto') -> Tuple[Opti
         except Exception:
             reason = None
         if reason is not None:
-            print(f'{Fore.LIGHTBLACK_EX}<think>\n{reason}\n</think>{Fore.RESET}')
+            print(f'{Fore.CYAN}============================{Fore.LIGHTBLACK_EX}<think>\n{reason}\n</think>{Fore.CYAN}============================{Fore.RESET}')
 
         elapsed = time.time() - start_time
-        print(f'{t("answer.elapsed")} {elapsed:.2f}s')
 
         if answer_text is not None:
             answer_text = answer_text.strip()
         print(answer_text if answer_text is not None else '')
 
+        print(f'{t("answer.elapsed")} {elapsed:.2f}s')
         return answer_text, totalTokens
 
     except Exception as e:
