@@ -31,6 +31,7 @@ scroll=config.getint('general','scroll')
 autoFocusing=config.getboolean('general','autoFocusing')
 width=config.getint('general','width')
 height=config.getint('general','height')
+smoothMove=config.getboolean('general','smooth_move')
 wmctrlsh='''#!/bin/bash
 # qq-move.sh
 # 将标题 == qq（不区分大小写）的窗口移动到 (0,0)，大小 1285x720，并激活到最前
@@ -75,10 +76,12 @@ def focus():
 
 def mouse_move(x: int, y: int) -> bool:
     global mouse
-    mouse.dest_position = (Coordinate(x), Coordinate(y))
-    mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
-    smoothMoveStart()
-    # pyautogui.moveTo(x, y)
+    if smoothMove:
+        mouse.dest_position = (Coordinate(x), Coordinate(y))
+        mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
+        smoothMoveStart()
+    else:
+        pyautogui.moveTo(x, y)
     
     return True
 def mouse_down() -> bool:
@@ -90,9 +93,10 @@ def mouse_up() -> bool:
     return True
 
 def click(x: int, y: int) -> bool:
-    mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
-    mouse.dest_position = (Coordinate(x), Coordinate(y))
-    smoothMoveStart()
+    if smoothMove:
+        mouse.start_position=(Coordinate(pyautogui.position()[0]),Coordinate(pyautogui.position()[1]))
+        mouse.dest_position = (Coordinate(x), Coordinate(y))
+        smoothMoveStart()
     pyautogui.click(x, y)
     return True
 
