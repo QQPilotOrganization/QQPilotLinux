@@ -66,6 +66,7 @@ DEFAULTS: dict[str, str] = {
     "account_id": "80586",
     "reverse": "True",
     "system": "",
+    "max_output":"500"
 }
 
 SERVER_MODES = ("ollama", "builtin", "onebot")
@@ -226,6 +227,7 @@ class Api:
             "sendimagepossibility": int(float(_value(parser, "sendimagepossibility") or 0)),
             "atdetect": _as_bool(_value(parser, "atdetect")),
             "mouse_smooth_move": _as_bool(_value(parser, "mouse_smooth_move")),
+            "max_output": _value(parser, "max_output"),
             "remote_server_timeout": _value(parser, "remote_server_timeout"),
             "tab_times": _value(parser, "tab_times") or "8",
             "system": _raw(parser, "system"),
@@ -254,7 +256,12 @@ class Api:
         require_number("scroll", _t("ui.settings.scroll"))
         require_number("remote_server_timeout", _t("ui.settings.remote_timeout"))
         require_number("sleep", _t("ui.settings.sleep"))
-
+        require_number("max_output",_t("ui.settings.max_output"))
+        if fields:
+            return {"ok": False, "fields": fields, "message": _t("config.validation_error")}
+        if int(payload.get("max_output", 0)) <0 or int(payload.get("max_output", 0))>500:
+            
+            fields["max_output"]=_t("config.max_output_error")
         try:
             possibility = int(payload.get("sendimagepossibility", 0))
             if not 0 <= possibility <= 100:
@@ -306,6 +313,7 @@ class Api:
         put("account_id", str(payload.get("account_id", "")).strip())
         put("reverse", bool(payload.get("reverse")))
         put("sleep", payload.get("sleep"))
+        put("max_output",payload.get("max_output"))
         # print(payload.get("test",""))
 
         if server_mode == "custom":

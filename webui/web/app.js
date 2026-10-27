@@ -474,6 +474,7 @@
       gRun.append(...row(T("ui.settings.atdetect"), need(switchControl(cfg.atdetect), "atdetect"), T("ui.settings.atdetect_hint")));
       gRun.append(...row(T("ui.settings.mouse_smooth_move"), need(switchControl(cfg.mouse_smooth_move), "mouse_smooth_move"), T("ui.settings.mouse_smooth_move_hint")));
       gRun.append(...row(T("ui.settings.sleep"), need(textInput(cfg.sleep, { inputmode: "numeric" }), "sleep"), T("ui.settings.sleep_hint")));
+      gRun.append(...row(T("ui.settings.max_output"), need(textInput(cfg.max_output, { inputmode: "numeric" }), "max_output"),""));
 
       sRun.append(gRun);
 
@@ -591,6 +592,7 @@
           account_id: refs.account_id.value.trim(),
           reverse: on("reverse"),
           sleep: refs.sleep.value.trim(),
+          max_output:refs.max_output.value.trim()
           // test:refs.api_key
         };
       }

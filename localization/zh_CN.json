@@ -209,6 +209,7 @@
     "ui.settings.extra_params": "额外参数",
     "ui.settings.extra_params_hint": "会合并进请求体，用于 temperature 等自定义字段",
     "ui.settings.edit_extra": "编辑 extra.json",
+    "ui.settings.max_output":"最大输出字数",
 
     "ui.ext.title": "扩展管理",
     "ui.ext.lede": "扩展是 Extensions/ 下的 Python 文件；停用会把文件改名为 .disabled。",
@@ -263,6 +264,7 @@
     "ui.console.empty": "等操作…",
 
     "config.number_error": "{label}得是数字",
+    "config.max_output_error":"需要在0~500之间",
     "json.window_not_ready": "窗口还没准备好",
 
     "ui.nav.aria": "功能",

@@ -1,3 +1,6 @@
+def clamp(min_value, max_value, value):
+   return max(min_value, min(value, max_value))
+
 from colorama import Fore
 import Vision
 import sysDetect
@@ -98,6 +101,7 @@ if __name__ == '__main__':
         tab_times=config.getint('general','tab_times')
         userName=config.get('general','name')
         sleep2=config.getint('general','sleep')
+        max_output=clamp(0,500,config.getint('general','max_output',fallback=500))
 
         print(f"{Fore.YELLOW}{t('program.name')} {config.get('general','version')}{Fore.RESET}",end='\t')
         print(f"{Fore.CYAN}{platform.platform()}{Fore.RESET}")
@@ -394,6 +398,7 @@ if __name__ == '__main__':
                     try:
                         if result2!=None and result2!="":  
                             result=''.join(list(result2))
+                            result=result[:max_output]
                     except:
                         result=""
                     if result.strip()=="":
