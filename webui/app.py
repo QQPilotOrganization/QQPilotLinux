@@ -66,7 +66,9 @@ DEFAULTS: dict[str, str] = {
     "account_id": "80586",
     "reverse": "True",
     "system": "",
-    "max_output":"500"
+    "max_output":"500",
+    "simulate_output_speed": "False",
+    "rest_schedule": "0,1,2,3,4,5,6,7,8"
 }
 
 SERVER_MODES = ("ollama", "builtin", "onebot")
@@ -227,6 +229,8 @@ class Api:
             "sendimagepossibility": int(float(_value(parser, "sendimagepossibility") or 0)),
             "atdetect": _as_bool(_value(parser, "atdetect")),
             "mouse_smooth_move": _as_bool(_value(parser, "mouse_smooth_move")),
+            "simulate_output_speed": _as_bool(_value(parser, "simulate_output_speed")),
+            "rest_schedule": _value(parser, "rest_schedule"),
             "max_output": _value(parser, "max_output"),
             "remote_server_timeout": _value(parser, "remote_server_timeout"),
             "tab_times": _value(parser, "tab_times") or "8",
@@ -281,6 +285,25 @@ class Api:
         if tab_times not in ("7", "8"):
             fields["tab_times"] = _t("config.tab_times_error")
 
+        # 休息时间表：逗号分隔的小时（0–23），空串表示不启用
+        rest_schedule = str(payload.get("rest_schedule", "")).strip()
+        if rest_schedule:
+            normalized_rest: list[str] = []
+            for part in rest_schedule.replace("，", ",").split(","):
+                part = part.strip()
+                if not part:
+                    continue
+                try:
+                    hour_value = int(part)
+                except ValueError:
+                    fields["rest_schedule"] = _t("config.rest_schedule_error")
+                    break
+                if not 0 <= hour_value <= 23:
+                    fields["rest_schedule"] = _t("config.rest_schedule_error")
+                    break
+                normalized_rest.append(str(hour_value))
+            rest_schedule = ",".join(normalized_rest)
+
         if fields:
             return {"ok": False, "fields": fields, "message": _t("config.validation_error")}
 
@@ -306,6 +329,8 @@ class Api:
         put("sendimagepossibility", int(possibility))
         put("atdetect", bool(payload.get("atdetect")))
         put("mouse_smooth_move", bool(payload.get("mouse_smooth_move")))
+        put("simulate_output_speed", bool(payload.get("simulate_output_speed")))
+        put("rest_schedule", rest_schedule)
         put("remote_server_timeout", str(payload.get("remote_server_timeout", "")).strip())
         put("tab_times", tab_times)
         put("system", str(payload.get("system", "")).strip())

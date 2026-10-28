@@ -475,6 +475,8 @@
       gRun.append(...row(T("ui.settings.mouse_smooth_move"), need(switchControl(cfg.mouse_smooth_move), "mouse_smooth_move"), T("ui.settings.mouse_smooth_move_hint")));
       gRun.append(...row(T("ui.settings.sleep"), need(textInput(cfg.sleep, { inputmode: "numeric" }), "sleep"), T("ui.settings.sleep_hint")));
       gRun.append(...row(T("ui.settings.max_output"), need(textInput(cfg.max_output, { inputmode: "numeric" }), "max_output"),""));
+      gRun.append(...row(T("ui.settings.rest_schedule"), need(textInput(cfg.rest_schedule, { placeholder: "1,2,3,4,5" }), "rest_schedule"), T("ui.settings.rest_schedule_hint")));
+      gRun.append(...row(T("ui.settings.simulate_output_speed"), need(switchControl(cfg.simulate_output_speed), "simulate_output_speed"), T("ui.settings.simulate_output_speed_hint")));
 
       sRun.append(gRun);
 
@@ -592,7 +594,9 @@
           account_id: refs.account_id.value.trim(),
           reverse: on("reverse"),
           sleep: refs.sleep.value.trim(),
-          max_output:refs.max_output.value.trim()
+          max_output:refs.max_output.value.trim(),
+          rest_schedule: refs.rest_schedule.value.trim(),
+          simulate_output_speed: on("simulate_output_speed")
           // test:refs.api_key
         };
       }

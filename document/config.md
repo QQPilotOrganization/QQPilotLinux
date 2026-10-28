@@ -27,6 +27,8 @@ sendimagepossibility = 86
 nt_data = None
 atdetect = False
 mouse_smooth_move = False
+simulate_output_speed = False
+rest_schedule = 0,1,2,3,4,5,6,7,8
 tab_times = 8
 remote_server_timeout = 300
 forceollamaapi = False
@@ -116,6 +118,8 @@ scale = 1.00
 | `autofocusing` | `False` | 持续把 QQ 窗口置于最前，避免被别的窗口遮挡 |
 | `mouse_smooth_move` | `False` | 用曲线动画把指针移到目标（windmouse）；更平滑，但每次点击会稍慢 |
 | `sleep` | `2` | 每条消息发送后额外等待的秒数 |
+| `simulate_output_speed` | `False` | 把回复按词逐个粘贴进输入框（jieba 分词），更接近真人打字，降低风控风险 |
+| `rest_schedule` | `0,1,2,3,4,5,6,7,8` | 休息时间表：这些本地小时里不工作。英文逗号分隔（如 `1,2,3,4,5`），留空表示不启用 |
 
 ## 提示词
 

@@ -32,6 +32,7 @@ autoFocusing=config.getboolean('general','autoFocusing')
 width=config.getint('general','width')
 height=config.getint('general','height')
 mouseSmoothMove=config.getboolean('general','mouse_smooth_move',fallback=False)
+simulateOutputSpeed=config.getboolean('general','simulate_output_speed',fallback=False)
 wmctrlsh='''#!/bin/bash
 TARGET="qq"
 GEO="0,0,0,WIDTH,HEIGHT"  
@@ -171,12 +172,31 @@ def clickCenter(area):
     click(*getCenter(area))
     
 press=press_key
+
+def _cut_words(text: str) -> list[str]:
+    """把一段文本切成“词”：优先 jieba 分词，失败时退回逐字。"""
+    if not text:
+        return []
+    try:
+        import jieba
+        return list(jieba.cut(text))
+    except Exception:
+        return list(text)
+
 def PasteTextToSection(text:str,section: tuple[int, int, int, int]):
-    pyperclip.copy(text)
-    time.sleep(0.2)
-    clickCenter(section)
-    HotKey("ctrl","v")
-    time.sleep(0.8)
+    if simulateOutputSpeed:
+        # 模拟输出速度：按词逐个粘贴，降低风控风险
+        for word in _cut_words(text):
+            pyperclip.copy(word)
+            time.sleep(0.1)
+            HotKey("ctrl","v")
+            time.sleep(0.08)
+    else:
+        pyperclip.copy(text)
+        time.sleep(0.2)
+        clickCenter(section)
+        HotKey("ctrl","v")
+        time.sleep(0.8)
     
 def SendText(text:str,section: tuple[int, int, int, int]):
     print(Fore.GREEN, t("gui.send_message") + text)

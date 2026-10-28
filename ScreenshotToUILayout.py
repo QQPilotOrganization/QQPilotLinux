@@ -9,6 +9,7 @@ if sysDetect.isLinux():
 import load
 import dockLog
 from localization import t
+from restSchedule import inRestSchedule
 load.startLoading(Fore.GREEN,t("default.loading"))
 floatingTextApp=dockLog.start_floating_window()
 dockLog.setText(t("default.loading.hint"))
@@ -102,6 +103,7 @@ if __name__ == '__main__':
         userName=config.get('general','name')
         sleep2=config.getint('general','sleep')
         max_output=clamp(0,500,config.getint('general','max_output',fallback=500))
+        restSchedule=config.get('general','rest_schedule',fallback='')
 
         print(f"{Fore.YELLOW}{t('program.name')} {config.get('general','version')}{Fore.RESET}",end='\t')
         print(f"{Fore.CYAN}{platform.platform()}{Fore.RESET}")
@@ -281,6 +283,11 @@ if __name__ == '__main__':
         
         while True:
             try:
+                if inRestSchedule(restSchedule):
+                    dockLog.setText(t("info.rest_schedule"))
+                    logger.info(t("info.rest_schedule"))
+                    time.sleep(60)
+                    continue
                 # im=image.screenshot(*positionRect)
                 
                 # im.save("screenshot.png")
