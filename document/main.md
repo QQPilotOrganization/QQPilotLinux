@@ -38,6 +38,7 @@ FishCakeQQ 是一个全自动的 QQ 聊天机器人，通过以下流程实现�
 | [架构说明](architecture.md) | 目录结构、模块职责与数据流（开发者） |
 | [贡献指南](contributing.md) | 开发环境、代码规范、提交与发布（开发者） |
 | [角色设定](../characterset.md) | 看板娘「鱼板 FishCake」的外观、性格与台词 |
+| [不同平台版本差异](https://github.com/QQPilotOrganization/QQPilot/blob/main/documentation/diff.md) - [Gitee](https://gitee.com/Na2Cr2O7/QQPilot/blob/main/documentation/diff.md)||
 
 ---
 
